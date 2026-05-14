@@ -1,4 +1,5 @@
 import os
+
 from setuptools import setup
 
 
@@ -16,7 +17,8 @@ setup(
     author="Philipp Glaum",
     author_email="p@pglaum.de",
     description=("A wrapper for the JDownloader API"),
-    license="GPLv3",
+    license="LGPLv3",
+    license_files=("LICENSE",),
     keywords="api jdownloader",
     url="https://git.sr.ht/~pglaum/pyjd-api",
     packages=["pyjd"],
@@ -26,6 +28,6 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
     ],
 )
