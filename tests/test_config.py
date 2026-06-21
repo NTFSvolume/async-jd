@@ -1,77 +1,74 @@
-import pytest
-
+from pyjd.jd_device import JDDevice
 from pyjd.jd_types import AdvancedConfigQuery
-from . import get_jdownloader
 
 
-class TestConfig:
-    @classmethod
-    def setup_class(cls):
-        cls.jdownloader = get_jdownloader()
+def test_get(jd: JDDevice) -> None:
+    cfg = jd.config.get(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+    )
+    assert cfg == "P_4320"  # this is jdownloader's default value
 
-    def test_get(self):
-        cfg = self.jdownloader.config.get(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-        )
-        assert cfg == "P_4320"  # this is jdownloader's default value
 
-    def test_get_default(self):
-        cfg = self.jdownloader.config.get(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-        )
-        assert cfg == "P_4320"  # this is jdownloader's default value
+def test_get_default(jd: JDDevice) -> None:
+    cfg = jd.config.get(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+    )
+    assert cfg == "P_4320"  # this is jdownloader's default value
 
-    def test_list(self):
-        youtube_config = self.jdownloader.config.list(".*youtube.*")
-        all_config = self.jdownloader.config.list()
-        assert len(youtube_config) > 0
-        assert len(youtube_config) < len(all_config)
 
-    def test_list_enum(self):
-        options = self.jdownloader.config.list_enum(
-            "org.jdownloader.plugins.components.youtube.itag.VideoResolution"
-        )
-        assert type(options) == list
-        assert len(options) > 0
+def test_list(jd: JDDevice) -> None:
+    youtube_config = jd.config.list(".*youtube.*")
+    all_config = jd.config.list()
+    assert len(youtube_config) > 0
+    assert len(youtube_config) < len(all_config)
 
-    def test_query(self):
-        query = AdvancedConfigQuery.default()
-        query.pattern = ".*youtube.*"
-        res = self.jdownloader.config.query(query)
-        assert type(res) == list
-        assert len(res) > 0
 
-    def test_set(self):
-        res = self.jdownloader.config.set(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-            "P_1080",
-        )
-        assert res
+def test_list_enum(jd: JDDevice) -> None:
+    options = jd.config.list_enum("org.jdownloader.plugins.components.youtube.itag.VideoResolution")
+    assert type(options) == list
+    assert len(options) > 0
 
-        value = self.jdownloader.config.get(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-        )
-        assert value == "P_1080"
 
-    def test_reset(self):
-        res = self.jdownloader.config.reset(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-        )
-        assert res
+def test_query(jd: JDDevice) -> None:
+    query = AdvancedConfigQuery.default()
+    query.pattern = ".*youtube.*"
+    res = jd.config.query(query)
+    assert type(res) == list
+    assert len(res) > 0
 
-        value = self.jdownloader.config.get(
-            "org.jdownloader.plugins.components.youtube.YoutubeConfig",
-            "cfg/plugins/youtube/Youtube",
-            "MaxVideoResolution",
-        )
-        assert value == "P_4320"
+
+def test_set(jd: JDDevice) -> None:
+    res = jd.config.set(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+        "P_1080",
+    )
+    assert res
+
+    value = jd.config.get(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+    )
+    assert value == "P_1080"
+
+
+def test_reset(jd: JDDevice) -> None:
+    res = jd.config.reset(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+    )
+    assert res
+
+    value = jd.config.get(
+        "org.jdownloader.plugins.components.youtube.YoutubeConfig",
+        "cfg/plugins/youtube/Youtube",
+        "MaxVideoResolution",
+    )
+    assert value == "P_4320"

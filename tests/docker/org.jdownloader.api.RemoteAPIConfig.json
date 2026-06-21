@@ -1,0 +1,8 @@
+{
+  "deprecatedapiport": 3128,
+  "externinterfaceenabled": true,
+  "deprecatedapilocalhostonly": false,
+  "deprecatedapienabled": true,
+  "jdanywhereapienabled": false,
+  "externinterfacelocalhostonly": true
+}

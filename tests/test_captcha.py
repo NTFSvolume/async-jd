@@ -1,28 +1,25 @@
-import pytest
-
-from . import get_jdownloader
+from pyjd.jd_device import JDDevice
 
 
-class TestCaptcha:
-    @classmethod
-    def setup_class(cls):
-        cls.jdownloader = get_jdownloader()
+def test_get() -> None:
+    # no captchas available for testing
+    assert True
 
-    def test_get(self):
-        # no captchas available for testing
-        assert True
 
-    def test_get_captcha_job(self):
-        # no captcha jobs available for testing
-        assert True
+def test_get_captcha_job() -> None:
+    # no captcha jobs available for testing
+    assert True
 
-    def test_list(self):
-        self.jdownloader.captcha.list()
 
-    def test_skip(self):
-        # no captchas available for testing
-        assert True
+def test_list(jd: JDDevice) -> None:
+    jd.captcha.list()
 
-    def test_solve(self):
-        # no captchas available for testing
-        assert True
+
+def test_skip() -> None:
+    # no captchas available for testing
+    assert True
+
+
+def test_solve() -> None:
+    # no captchas available for testing
+    assert True
