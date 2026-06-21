@@ -1,3 +1,0 @@
-requests
-pydantic==1.10.19
-pycryptodome
