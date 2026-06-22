@@ -1,54 +1,25 @@
-import base64
+from __future__ import annotations
+
 import dataclasses
 import hashlib
-import hmac
 import json
 import logging
 import time
 import urllib.parse
-from collections.abc import Generator, Iterable
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
-import requests
-from Crypto.Cipher import AES
-
+from pyjd.crypto import create_secret, decrypt_secret, encrypt_secret, sign_hmac_sha256
+from pyjd.http_client import make_request
 from pyjd.jd_device import DeviceDict, JDDevice
 from pyjd.myjd_connection_helper import MyJDConnectionHelper
 from pyjd.myjd_session import MyJDSession, MyJDSessionBackup
 
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable
+
+    import requests
+
 logger = logging.getLogger(__name__)
-
-_AES_BLOCK_SIZE = 16
-
-
-def _pad_bytes(s: bytes) -> bytes:
-    """Pad a string
-
-    :param s: String to pad
-    :type s: bytes
-    :return: Padded ``s``.
-    :rtype: bytes
-    """
-
-    return (
-        s
-        + (
-            (_AES_BLOCK_SIZE - len(s) % _AES_BLOCK_SIZE)
-            * chr(_AES_BLOCK_SIZE - len(s) % _AES_BLOCK_SIZE)
-        ).encode()
-    )
-
-
-def _unpad_bytes(s: bytes) -> bytes:
-    """Unpad a string.
-
-    :param s: String to unpad
-    :type s: bytes
-    :return: Unpadded ``s``.
-    :rtype: bytes
-    """
-
-    return s[0 : -s[-1]]
 
 
 def _new_request_id() -> int:
@@ -104,8 +75,8 @@ class MyJDConnector:
     def connect(self, email: str, password: str) -> bool:
         self.update_request_id()
         self._session = MyJDSession(
-            login_secret=_create_secret(email, password, "server"),
-            device_secret=_create_secret(email, password, "device"),
+            login_secret=create_secret(email, password, "server"),
+            device_secret=create_secret(email, password, "device"),
         )
         response = self.request_api(
             "/my/connect",
@@ -227,7 +198,7 @@ class MyJDConnector:
         if http_method == "GET":
             query = "&".join([*_prepare_get_query(params), f"rid={self.__request_id}"])
             url = f"{path}?{query}"
-            sig = _sign_hmac_sha256(self._server_encryption_token(), url)
+            sig = sign_hmac_sha256(self._server_encryption_token(), url)
             request_url = f"{api}{url}&signature={sig}"
         else:
             data = json.dumps(
@@ -244,21 +215,17 @@ class MyJDConnector:
             if not self._session.device_encryption_token:
                 raise RuntimeError("No device encryption token\n")
 
-            json_data = _encrypt(self._session.device_encryption_token, b_data)
+            json_data = encrypt_secret(self._session.device_encryption_token, b_data)
             request_url = api + (action or "") + path
 
-        try:
-            encrypted_response = _make_request(
-                request_url,
-                headers={"Content-Type": "application/aesjson-jd; charset=utf-8"}
-                if json_data
-                else None,
-                data=json_data,
-                timeout=3,
-            )
-
-        except requests.exceptions.RequestException:
-            return None
+        encrypted_response = make_request(
+            request_url,
+            headers={"Content-Type": "application/aesjson-jd; charset=utf-8"}
+            if json_data
+            else None,
+            data=json_data,
+            timeout=3,
+        )
 
         if encrypted_response.status_code != 200:
             error_msg = self._decode_error(encrypted_response)
@@ -296,7 +263,7 @@ class MyJDConnector:
         except json.JSONDecodeError:
             try:
                 return json.loads(
-                    _decrypt(self._device_encryption_token(), encrypted_response.text)
+                    decrypt_secret(self._device_encryption_token(), encrypted_response.text)
                 )
             except json.JSONDecodeError:
                 raise RuntimeError(
@@ -322,7 +289,7 @@ class MyJDConnector:
             self._server_encryption_token() if action is None else self._device_encryption_token()
         )
 
-        response = _decrypt(secret_token, encrypted_response.text)
+        response = decrypt_secret(secret_token, encrypted_response.text)
         json_data = json.loads(response.decode("utf-8"))
         if json_data["rid"] != self.__request_id:
             self.update_request_id()
@@ -346,44 +313,3 @@ def _prepare_post_query(params: Iterable[Any] | None = None) -> Generator[Any]:
 
     for param in params:
         yield param if isinstance(param, list) else json.dumps(param)
-
-
-def _make_request(
-    url: str,
-    *,
-    headers: dict[str, str] | None = None,
-    data: Any = None,
-    timeout: int = 60,
-) -> requests.Response:
-    logger.debug(f"Request to {url}")
-    return requests.get(url, headers=headers, timeout=timeout, data=data)
-
-
-def _create_secret(email: str, password: str, domain: str) -> bytes:
-    """Create the login_secret and device_secret.
-
-    :param domain: The domain of the secret ("server" for login_secret and
-        "device" for device_secret)
-    """
-
-    data = email.lower() + password + domain.lower()
-    return hashlib.sha256(data.encode("utf-8")).digest()
-
-
-def _sign_hmac_sha256(key: bytes, data: str) -> str:
-    return hmac.new(key, data.encode("utf-8"), hashlib.sha256).hexdigest()
-
-
-def _encrypt(secret_token: bytes, data: bytes) -> str:
-    data = _pad_bytes(data)
-    middle = len(secret_token) // 2
-    init_vector, key = secret_token[:middle], secret_token[middle:]
-    cypher = AES.new(key, AES.MODE_CBC, init_vector)
-    return base64.b64encode(cypher.encrypt(data)).decode("utf-8")
-
-
-def _decrypt(secret_token: bytes, data: str) -> bytes:
-    middle = len(secret_token) // 2
-    init_vector, key = secret_token[:middle], secret_token[middle:]
-    cypher = AES.new(key, AES.MODE_CBC, init_vector)
-    return _unpad_bytes(cypher.decrypt(base64.b64decode(data)))

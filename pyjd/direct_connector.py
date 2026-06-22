@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import dataclasses
 import json
 import logging
 from typing import Any
 
-import requests
-
-from .jd_device import JDDevice
+from pyjd.http_client import make_request
+from pyjd.jd_device import JDDevice
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class DirectConnector:
         :rtype: bool
         """
         try:
-            _make_request(self.base_url + "/jd/version", self.headers)
+            make_request(self.base_url + "/jd/version", headers=self.headers)
         except Exception:  # noqa: BLE001
             return False
         else:
@@ -60,14 +61,9 @@ class DirectConnectionHelper:
         url = f"{self.device.connector.base_url}{path}"
         if params:
             url = f"{url}?" + "&".join(map(json.dumps, params))
-        content = _make_request(url, self.device.connector.headers).content
+        content = make_request(url, headers=self.device.connector.headers).content
         if binary:
             return content
 
         data = json.loads(content)
         return data.get("data", data)
-
-
-def _make_request(url: str, headers: dict[str, str] | None = None) -> requests.Response:
-    logger.debug(f"Request to {url}")
-    return requests.get(url, headers=headers, timeout=60)
