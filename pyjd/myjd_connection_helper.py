@@ -1,107 +1,86 @@
+from __future__ import annotations
+
+import dataclasses
+import logging
 import time
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
+
+from pyjd.jd_types import API, Connection
 
 if TYPE_CHECKING:
-    from .jd_device import JDDevice
+    from pyjd.jd_device import JDDevice
+
+logger = logging.getLogger(__name__)
 
 
-class MyJDConnectionHelper:
+@dataclasses.dataclass(slots=True, frozen=True)
+class _DirectConnection:
+    ip: str
+    port: int
+
+
+@dataclasses.dataclass(slots=True)
+class DirectConnectionContext:
+    info: list[Any] | None = None
+    cooldowns: dict[_DirectConnection, int] = dataclasses.field(default_factory=dict)
+    enabled: bool = True
+    cooldown: int = 0
+    consecutive_errors: int = 0
+
+
+class MyJDConnection(Connection):
     def __init__(
         self,
-        device: "JDDevice",
+        api: API,
+        device: JDDevice,
+        *,
         refresh_direct_connections: bool = True,
     ) -> None:
-        self.device = device
-
-        self.__direct_connection_info: list | None = None
+        self.api: API = api
+        self.device: JDDevice = device
+        self._direct_ctx: DirectConnectionContext = DirectConnectionContext()
         if refresh_direct_connections:
-            print("refreshing direct connections")
             self.__refresh_direct_connections()
-        self.__direct_connection_enabled = True
-        self.__direct_connection_cooldown = 0
-        self.__direct_connection_consecutive_failures = 0
+
+    def refresh_direct_connections(self) -> None:
+        """Check again if a direct connection is possible."""
+        self.__refresh_direct_connections()
 
     def __refresh_direct_connections(self) -> None:
         """Check again if a direct connection is possible."""
-
-        response = self.device.connector.request_api(
-            "/device/getDirectConnectionInfos", "POST", None, self.__action_url()
+        logger.info("refreshing direct connections")
+        response = self.api.request(
+            "/device/getDirectConnectionInfos",
+            "POST",
+            None,
+            self.__action_url(),
         )
-        if response is None:
-            return
 
         try:
-            info = response["data"]["infos"]
+            connections: list[dict[str, Any]] = response["data"]["infos"]
         except LookupError:
             return
-        if len(info) > 0:
-            self.__update_direct_connections(info)
 
-    def __update_direct_connections(self, direct_info: list) -> None:
-        """Update the direct_connection info while keeping the correct order.
-
-        :param direct_info: Information about direct connections
-        :type direct_info: dict
-        """
-
-        tmp = []
-        if self.__direct_connection_info is None:
-            for conn in direct_info:
-                tmp.append({"conn": conn, "cooldown": 0})
-
-            self.__direct_connection_info = tmp
-            return
-
-        # Remove old connections that are not available any longer.
-        for i in self.__direct_connection_info:
-            if i["conn"] not in direct_info:
-                tmp.remove(i)
-            else:
-                direct_info.remove(i["conn"])
-
-        # Add new connections
-        for conn in direct_info:
-            tmp.append({"conn": conn, "cooldown": 0})
-
-        self.__direct_connection_info = tmp
+        if len(connections) > 0:
+            self._direct_ctx.cooldowns = {
+                conn: self._direct_ctx.cooldowns.get(conn, 0)
+                for info in connections
+                if (conn := _DirectConnection(**info))
+            }
 
     def enable_direct_connection(self) -> None:
-        """Enable direct connections."""
-
-        self.__direct_connection_enabled = True
+        self._direct_ctx.enabled = True
         self.__refresh_direct_connections()
 
     def disable_direct_connect(self) -> None:
-        """Disable direct connections."""
-
-        self.__direct_connection_enabled = False
-        self.__direct_connection_info = None
-
-    def get_direct_connection_info(self) -> list | None:
-        """
-        Get information about the direct connections.
-
-        :return: Information about the direct connections
-        :rtype: list
-        """
-
-        return self.__direct_connection_info
-
-    def set_direct_connection_info(self, direct_info: list) -> None:
-        """
-        Set information about the direct connections.
-
-        :param direct_info: Information about the direct connections
-        :type direct_info: list
-        """
-
-        self.__direct_connection_info = direct_info
+        self._direct_ctx.enabled = False
+        self._direct_ctx.cooldowns.clear()
 
     def action(
         self,
         path: str,
         params: Any | None = [],
-        http_action: str = "POST",
+        http_action: Literal["GET", "POST"] = "POST",
         *,
         binary: bool = False,
     ) -> dict | None:
@@ -128,23 +107,18 @@ class MyJDConnectionHelper:
         action_url = self.__action_url()
 
         if (
-            not self.__direct_connection_enabled
-            or self.__direct_connection_info is None
-            or time.time() < self.__direct_connection_cooldown
+            not self._direct_ctx.enabled
+            or self._direct_ctx.info is None
+            or time.time() < self._direct_ctx.cooldown
         ):
             # No direct connection available, use the MyJD API
-            response = self.device.connector.request_api(
-                path, http_action, params, action_url, binary=binary
-            )
+            response = self.api.request(path, http_action, params, action_url, binary=binary)
 
             if response is None:
                 return None
             if binary:
                 return response
-            if (
-                self.__direct_connection_enabled
-                and time.time() >= self.__direct_connection_cooldown
-            ):
+            if self._direct_ctx.enabled and time.time() >= self._direct_ctx.cooldown:
                 self.__refresh_direct_connections()
 
             if "data" in response:
@@ -152,56 +126,49 @@ class MyJDConnectionHelper:
             return response
 
         # A direct connection is available, try to use it
-        for conn in self.__direct_connection_info:
-            if time.time() > conn["cooldown"]:
-                # Use the direct connection
-                connection = conn["conn"]
-                api = f"http://{connection['ip']}:{connection['port']}"
+        now = time.time()
+        for connection, cooldown in self._direct_ctx.cooldowns.items():
+            if now < cooldown:
+                continue
+            # Use the direct connection
 
-                response = self.device.connector.request_api(
-                    path, http_action, params, action_url, api, binary=binary
-                )
+            api = f"http://{connection.ip}:{connection.port}"
 
-                if response is None:
-                    # Don't try this connection for a minute.
-                    conn["cooldown"] = time.time() + 60
+            response = self.api.request(path, http_action, params, action_url, api, binary=binary)
 
-                elif binary:
-                    return response
+            if response is None:
+                # Don't try this connection for a minute.
+                connection["cooldown"] = time.time() + 60
 
-                else:
-                    # This connection worked, push it to the top of the
-                    # list.
-                    self.__direct_connection_info.remove(conn)
-                    self.__direct_connection_info.insert(0, conn)
-                    self.__direct_connection_consecutive_failures = 0
+            elif binary:
+                return response
 
-                    if "data" in response:
-                        return response["data"]
-                    return response
+            else:
+                # This connection worked, push it to the top of the
+                # list.
+                self._direct_ctx.info.remove(connection)
+                self._direct_ctx.info.insert(0, connection)
+                self._direct_ctx.consecutive_errors = 0
+
+                if "data" in response:
+                    return response["data"]
+                return response
 
         # None of the direct connections worked, set a cooldown for all
         # direct connections
-        self.__direct_connection_consecutive_failures += 1
-        self.__direct_connection_cooldown = int(
-            time.time() + (60 * self.__direct_connection_consecutive_failures)
-        )
+        self._direct_ctx.consecutive_errors += 1
+        self._direct_ctx.cooldown = int(time.time() + (60 * self._direct_ctx.consecutive_errors))
 
         # Use the MyJD API instead
-        response = self.device.connector.request_api(
-            path, http_action, params, action_url, binary=binary
-        )
+        response = self.api.request(path, http_action, params, action_url, binary=binary)
 
         if response is None:
             return None
 
         self.__refresh_direct_connections()
-
-        if "data" in response:
-            return response["data"]
-        return response
+        return response.get("data", response)
 
     def __action_url(self) -> str:
         """Generate the action url for the device and session."""
 
-        return "/t_" + self.device.connector.get_session_token() + "_" + self.device.device_id
+        return "/t_" + self.api.get_session_token() + "_" + self.device.id

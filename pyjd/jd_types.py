@@ -9,10 +9,48 @@ For more information, see here:
 from __future__ import annotations
 
 import dataclasses as py_dataclasses
+from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol
 
 from pydantic import dataclasses
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+
+class API(ABC):
+    @abstractmethod
+    def request(
+        self,
+        path: str,
+        http_method: Literal["GET", "POST"] = "GET",
+        params: Sequence[tuple[str, Any]] | None = None,
+        action: str | None = None,
+        api: str | None = None,
+        *,
+        binary: bool = False,
+    ) -> Any: ...
+
+    @abstractmethod
+    def raw_request(
+        self,
+        path: str,
+        http_method: Literal["GET", "POST"] = "GET",
+        params: Sequence[tuple[str, Any]] | None = None,
+        action: str | None = None,
+        api: str | None = None,
+    ) -> bytes: ...
+
+
+class Connection(Protocol):
+    def action(
+        self,
+        path: str,
+        params: Sequence[tuple[str, Any]] | None = None,
+        *,
+        binary: bool = False,
+    ) -> Any: ...
 
 
 class _DictDataClass:

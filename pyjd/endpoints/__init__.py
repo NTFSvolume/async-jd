@@ -1,16 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar
 
-
-class Connection(Protocol):
-    def action(
-        self,
-        path: str,
-        params: Any | None = None,
-        *,
-        binary: bool = False,
-    ) -> Any: ...
+if TYPE_CHECKING:
+    from pyjd.jd_types import Connection
 
 
 class Action:

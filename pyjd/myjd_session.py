@@ -5,7 +5,7 @@ import dataclasses
 from typing import TYPE_CHECKING, Self, final
 
 if TYPE_CHECKING:
-    from pyjd.jd_device import DeviceDict
+    from pyjd.jd_device import JDDevice
 
 
 @final
@@ -17,7 +17,7 @@ class MyJDSession:
     regain_token: str | None = None
     server_encryption_token: bytes | None = None
     device_encryption_token: bytes | None = None
-    devices: list[DeviceDict] = dataclasses.field(default_factory=list)
+    devices: list[JDDevice] = dataclasses.field(default_factory=list)
     connected: bool = False
 
     def __repr__(self) -> str:
@@ -32,7 +32,7 @@ class MyJDSessionBackup:
     regain_token: str | None
     server_encryption_token: str | None
     device_encryption_token: str | None
-    devices: tuple[DeviceDict, ...]
+    devices: tuple[JDDevice, ...]
     connected: bool
 
     @staticmethod

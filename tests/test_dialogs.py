@@ -1,11 +1,11 @@
 import pytest
 
-from pyjd.jd_device import JDDevice
+from pyjd.jd_device import JDDeviceClient
 from pyjd.jd_types import DialogInfo, DialogTypeInfo
 
 
 @pytest.mark.xfail(reason="broken from before fork")
-def test_dialogs(jd: JDDevice) -> None:
+def test_dialogs(jd: JDDeviceClient) -> None:
     # we're just doing everything in here..
 
     # generate a dialog

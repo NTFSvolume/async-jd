@@ -1,5 +1,7 @@
-from typing import Any, TypedDict, final
+import dataclasses
+from typing import final
 
+from pyjd.direct import DirectConnection
 from pyjd.endpoints.accounts import Accounts
 from pyjd.endpoints.captcha import Captcha
 from pyjd.endpoints.config import Config
@@ -17,70 +19,44 @@ from pyjd.endpoints.system import System
 from pyjd.endpoints.toolbar import Toolbar
 from pyjd.endpoints.ui import UI
 from pyjd.endpoints.update import Update
-from pyjd.myjd_connection_helper import MyJDConnectionHelper
+from pyjd.myjd_connection_helper import MyJDConnection
 
 
-class DeviceDict(TypedDict, total=True):
+@dataclasses.dataclass(slots=True, frozen=True)
+class JDDevice:
     name: str
     id: str
     type: str
 
 
 @final
-class JDDevice:
+class JDDeviceClient:
     """A class that represents a JDownloader device and its functions."""
 
     def __init__(
         self,
-        connector: Any,
-        connection_helper: type,
-        device_dict: DeviceDict,
-        refresh_direct_connections: bool = True,
+        connection: DirectConnection | MyJDConnection,
+        device: JDDevice,
     ):
-        """Initializes the device instance.
-
-        :param connector: The connector object (direct or MyJD)
-        :type connector: Any
-        :param device_dict: Dictionary with device properties
-        :type device_dict: dict
-        :returns: A JDDevice object
-        :rtype: JDDevice
-        """
-
-        self.name = device_dict["name"]
-        self.device_id = device_dict["id"]
-        self.device_type = device_dict["type"]
-
-        self.connector = connector
-        self.connection_helper = conn = _connect(
-            self, connection_helper, refresh_direct_connections=refresh_direct_connections
-        )
-
-        self.accounts = Accounts(conn)
-        self.captcha = Captcha(conn)
-        self.config = Config(conn)
-        self.content = Content(conn)
-        self.dialogs = Dialogs(conn)
-        self.device = Device(conn)
-        self.downloads = Downloads(conn)
-        self.events = Events(conn)
-        self.extensions = Extensions(conn)
-        self.linkgrabber = LinkGrabber(conn)
-        self.log = Log(conn)
-        self.plugins = Plugins(conn)
-        self.polling = Polling(conn)
-        self.system = System(conn)
-        self.toolbar = Toolbar(conn)
-        self.ui = UI(conn)
-        self.update = Update(conn)
-
-
-def _connect(
-    self: JDDevice,
-    connection_helper: type,
-    *,
-    refresh_direct_connections: bool,
-) -> MyJDConnectionHelper:
-    if connection_helper is MyJDConnectionHelper:
-        return connection_helper(self, refresh_direct_connections=refresh_direct_connections)
-    return connection_helper(self)
+        self.name = device.name
+        self.id = device.id
+        self.type = device.type
+        self._device = device
+        self.connection = connection
+        self.accounts = Accounts(connection)
+        self.captcha = Captcha(connection)
+        self.config = Config(connection)
+        self.content = Content(connection)
+        self.dialogs = Dialogs(connection)
+        self.device = Device(connection)
+        self.downloads = Downloads(connection)
+        self.events = Events(connection)
+        self.extensions = Extensions(connection)
+        self.linkgrabber = LinkGrabber(connection)
+        self.log = Log(connection)
+        self.plugins = Plugins(connection)
+        self.polling = Polling(connection)
+        self.system = System(connection)
+        self.toolbar = Toolbar(connection)
+        self.ui = UI(connection)
+        self.update = Update(connection)

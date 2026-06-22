@@ -10,8 +10,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pyjd.crypto import create_secret, decrypt_secret, encrypt_secret, sign_hmac_sha256
 from pyjd.http_client import make_request
-from pyjd.jd_device import DeviceDict, JDDevice
-from pyjd.myjd_connection_helper import MyJDConnectionHelper
+from pyjd.jd_device import JDDevice, JDDeviceClient
+from pyjd.jd_types import API
+from pyjd.myjd_connection_helper import MyJDConnection
 from pyjd.myjd_session import MyJDSession, MyJDSessionBackup
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ def _new_request_id() -> int:
     return int(time.time() * 1000)
 
 
-class MyJDConnector:
+class MyJDAPI(API):
     """Main class for connecting to the MyJD API."""
 
     def __init__(self) -> None:
@@ -78,7 +79,7 @@ class MyJDConnector:
             login_secret=create_secret(email, password, "server"),
             device_secret=create_secret(email, password, "device"),
         )
-        response = self.request_api(
+        response = self.request(
             "/my/connect",
             "GET",
             [
@@ -100,7 +101,7 @@ class MyJDConnector:
         :returns: True if successful, False if there was any error.
         :rtype: bool
         """
-        response = self.request_api(
+        response = self.request(
             "/my/reconnect",
             "GET",
             [
@@ -121,9 +122,7 @@ class MyJDConnector:
         :rtype: bool
         """
 
-        response = self.request_api(
-            "/my/disconnect", "GET", [("sessiontoken", self._session.token)]
-        )
+        response = self.request("/my/disconnect", "GET", [("sessiontoken", self._session.token)])
         self.update_request_id()
         self._session = MyJDSession()
         return response
@@ -138,23 +137,21 @@ class MyJDConnector:
             self._session = session.unfreeze()
 
     def update_devices(self) -> bool:
-        response = self.request_api(
-            "/my/listdevices", "GET", [("sessiontoken", self._session.token)]
-        )
+        response = self.request("/my/listdevices", "GET", [("sessiontoken", self._session.token)])
         self.update_request_id()
-        self._session.devices = response["list"]
+        self._session.devices = [JDDevice(**d) for d in response["list"]]
         return response
 
     @property
-    def devices(self) -> list[DeviceDict]:
-        return [d.copy() for d in self._session.devices]
+    def devices(self) -> list[JDDevice]:
+        return self._session.devices
 
     def get_device(
         self,
         device_name: str | None = None,
         device_id: str | None = None,
         refresh_direct_connections=True,
-    ) -> JDDevice:
+    ) -> JDDeviceClient:
 
         if not self.connected:
             raise (Exception("No connection established\n"))
@@ -163,21 +160,21 @@ class MyJDConnector:
             raise ValueError("Either device_id or device_name are required")
 
         for device in self._session.devices:
-            if device_id is not None and device["id"] != device_id:
+            if device_id is not None and device.id != device_id:
                 continue
-            if device_name is not None and device["name"] != device_name:
+            if device_name is not None and device.name != device_name:
                 continue
 
-            return JDDevice(
+            return JDDeviceClient(
                 self,
-                MyJDConnectionHelper,
+                MyJDConnection,
                 device,
                 refresh_direct_connections=refresh_direct_connections,
             )
 
         raise (Exception("Device not found\n"))
 
-    def request_api(
+    def request(
         self,
         path: str,
         http_method: Literal["GET", "POST"] = "GET",

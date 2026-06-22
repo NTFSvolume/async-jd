@@ -1,4 +1,4 @@
-from pyjd.jd_device import JDDevice
+from pyjd.jd_device import JDDeviceClient
 
 
 def test_get() -> None:
@@ -11,7 +11,7 @@ def test_get_captcha_job() -> None:
     assert True
 
 
-def test_list(jd: JDDevice) -> None:
+def test_list(jd: JDDeviceClient) -> None:
     jd.captcha.list()
 
 
