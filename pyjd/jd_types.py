@@ -300,7 +300,7 @@ class AddLinksQuery(_DictDataClass):
     sourceUrl: str | None
     overwritePackagizerRules: bool | None
     packageName: str | None
-    dataURLs: list[str] = []
+    dataURLs: list[str] = py_dataclasses.field(default_factory=list)
     priority: Priority | None = Priority.DEFAULT
 
     def __repr__(self) -> str:

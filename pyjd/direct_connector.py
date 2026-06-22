@@ -1,10 +1,13 @@
 import dataclasses
 import json
+import logging
 from typing import Any
 
 import requests
 
 from .jd_device import JDDevice
+
+logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(slots=True)
@@ -22,8 +25,8 @@ class DirectConnector:
         :rtype: bool
         """
         try:
-            requests.get(self.base_url + "/jd/version", headers=self.headers)
-        except Exception:
+            _make_request(self.base_url + "/jd/version", self.headers)
+        except Exception:  # noqa: BLE001
             return False
         else:
             return True
@@ -47,36 +50,23 @@ class DirectConnectionHelper:
     def action(
         self,
         path: str,
-        params: Any | None = None,
+        params: list[Any] | tuple[Any, ...] = (),
         http_action: str = "POST",
         *,
         binary: bool = False,
     ) -> Any:
-        """Make the request to the JDownloader.
-
-        :param path: The URL endpoint (excluding base_url) that is called.
-        :type path: str
-        :param params: Parameters for the request
-        :type params: list, dict or str
-        :param http_action: The HTTP method (unused)
-        :type http_action: str
-        :param binary: Return the response as byte array
-        :type binary: bool
-        :returns: The result of the request
-        :rtype: byte_array, dict, string
-        """
+        """Make the request to the JDownloader"""
         assert http_action == "POST"
         rurl = f"{self.device.connector.base_url}{path}"
-
-        param_list = []
-        if params:
-            for param in params:
-                param_list.append(json.dumps(param))
-        rparams = "?" + "&".join(param_list)
-
+        rparams = "?" + "&".join(map(json.dumps, params))
+        content = _make_request(rurl + rparams, self.device.connector.headers).content
         if binary:
-            return requests.get(rurl + rparams, headers=self.device.connector.headers).content
+            return content
 
-        rstr = requests.get(rurl + rparams, headers=self.device.connector.headers).content.decode()
-        robj = json.loads(rstr)
-        return robj.get("data", robj)
+        data = json.loads(content)
+        return data.get("data", data)
+
+
+def _make_request(url: str, headers: dict[str, str] | None = None) -> requests.Response:
+    logger.debug(f"Request to {url}")
+    return requests.get(url, headers=headers, timeout=60)

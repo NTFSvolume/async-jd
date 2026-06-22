@@ -24,6 +24,10 @@ jobs:
         run: |
           uv sync --all-extras
 
+      - name: Smoke test
+        run: |
+          uv run python -c "from pyjd.jd_device import JDDevice"
+
       - name: Start JDownloader
         timeout-minutes: 5
         run: |

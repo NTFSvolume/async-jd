@@ -1,9 +1,17 @@
+from typing import Any, Literal, TypedDict
+
 from pyjd.endpoints import Action
 from pyjd.jd_types import DialogInfo, DialogTypeInfo
 
 
+class Response(TypedDict, total=False):
+    dontshowagain: bool
+    dontshowagainselected: bool
+    closereason: Literal["OK", "CANCEL", "CLEAR", "TIMEOUT", "INTERRUPT"]
+
+
 class Dialogs(Action, endpoint="dialogs"):
-    def answer(self, id: int, data: dict) -> Any:
+    def answer(self, id: int, data: Response) -> Any:
         """Answer the dialog.
 
         The data is a dictionary with the following keys:
