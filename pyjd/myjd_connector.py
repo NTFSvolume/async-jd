@@ -1,14 +1,16 @@
-from .jd_device import JDDevice
-from .myjd_connection_helper import MyJDConnectionHelper
-from Crypto.Cipher import AES
-from typing import Optional, Any, Dict, List
-from urllib.parse import quote
 import base64
 import hashlib
 import hmac
 import json
-import requests
 import time
+from typing import Any
+from urllib.parse import quote
+
+import requests
+from Crypto.Cipher import AES
+
+from .jd_device import JDDevice
+from .myjd_connection_helper import MyJDConnectionHelper
 
 BS = 16
 
@@ -45,20 +47,20 @@ class MyJDConnector:
 
         self.__request_id = int(time.time() * 1000)
         self.__api_url = "https://api.jdownloader.org"
-        self.__app_key = "https://github.com/pglaum/pyjd"
+        self.__app_key = "https://github.com/NTFSvolume/async-jd"
         self.__api_version = 1
-        self.__devices: List[dict] = []
+        self.__devices: list[dict[str, str]] = []
 
-        self.__login_secret: Optional[bytes] = None
-        self.__device_secret: Optional[bytes] = None
-        self.__session_token: Optional[str] = None
+        self.__login_secret: bytes | None = None
+        self.__device_secret: bytes | None = None
+        self.__session_token: str | None = None
         self.__regain_token = None
-        self.__server_encryption_token: Optional[bytes] = None
-        self.__device_encryption_token: Optional[bytes] = None
+        self.__server_encryption_token: bytes | None = None
+        self.__device_encryption_token: bytes | None = None
 
         self.__connected = False
 
-    def get_session_token(self) -> Optional[str]:
+    def get_session_token(self) -> str | None:
         """Get the session token
 
         :return: Returns ``self.__session_token``.
@@ -121,13 +123,13 @@ class MyJDConnector:
             old_token = self.__server_encryption_token
 
         if not old_token:
-            raise Exception("No old token available")
+            raise RuntimeError("No old token available")
 
         if not self.__session_token:
-            raise Exception("No session token available")
+            raise RuntimeError("No session token available")
 
         if not self.__device_secret:
-            raise Exception("No device secret available")
+            raise RuntimeError("No device secret available")
 
         new_token = hashlib.sha256()
         new_token.update(old_token + bytearray.fromhex(self.__session_token))
@@ -166,7 +168,6 @@ class MyJDConnector:
         decryptor = AES.new(key, AES.MODE_CBC, init_vector)
 
         decrypted_data = UNPAD(decryptor.decrypt(base64.b64decode(data)))
-
         return decrypted_data
 
     def __encrypt(self, secret_token: bytes, data: bytes) -> str:
@@ -275,7 +276,7 @@ class MyJDConnector:
 
         return response
 
-    def get_session(self) -> dict:
+    def get_session(self) -> dict[str, Any]:
         """Get the current session.
 
         :returns: The current session
@@ -291,14 +292,14 @@ class MyJDConnector:
             else None,
             "session_token": self.__session_token,
             "regain_token": self.__regain_token,
-            "server_encryption_token": base64.b64encode(
-                self.__server_encryption_token
-            ).decode("ASCII")
+            "server_encryption_token": base64.b64encode(self.__server_encryption_token).decode(
+                "ASCII"
+            )
             if self.__server_encryption_token
             else None,
-            "device_encryption_token": base64.b64encode(
-                self.__device_encryption_token
-            ).decode("ASCII")
+            "device_encryption_token": base64.b64encode(self.__device_encryption_token).decode(
+                "ASCII"
+            )
             if self.__device_encryption_token
             else None,
             "devices": self.__devices,
@@ -313,9 +314,7 @@ class MyJDConnector:
         """
 
         self.__login_secret = base64.b64decode(session["login_secret"].encode("ASCII"))
-        self.__device_secret = base64.b64decode(
-            session["device_secret"].encode("ASCII")
-        )
+        self.__device_secret = base64.b64decode(session["device_secret"].encode("ASCII"))
         self.__session_token = session["session_token"]
         self.__regain_token = session["regain_token"]
         self.__server_encryption_token = base64.b64decode(
@@ -344,7 +343,7 @@ class MyJDConnector:
 
         return response
 
-    def list_devices(self) -> List[Dict]:
+    def list_devices(self) -> list[dict[str, str]]:
         """Get available devices.
 
         Use ``update_devices()`` to update the device list.
@@ -368,8 +367,8 @@ class MyJDConnector:
 
     def get_device(
         self,
-        device_name: Optional[str] = None,
-        device_id: Optional[str] = None,
+        device_name: str | None = None,
+        device_id: str | None = None,
         refresh_direct_connections=True,
     ) -> JDDevice:
         """Get a JDDevice instance for a device
@@ -413,9 +412,9 @@ class MyJDConnector:
         self,
         path: str,
         http_method: str = "GET",
-        params: Optional[Any] = None,
-        action: Optional[str] = None,
-        api: Optional[str] = None,
+        params: Any | None = None,
+        action: str | None = None,
+        api: str | None = None,
         binary: bool = False,
     ) -> Any:
         """Make a request to the MyJD API.
@@ -444,13 +443,12 @@ class MyJDConnector:
         :rtype: Any
         """
 
-        if not api:
-            api = self.__api_url
+        api = api or self.__api_url
 
         data = None
         query = None
         if not self.is_connected() and path != "/my/connect":
-            raise (Exception("No connection established\n"))
+            raise (RuntimeError("No connection established\n"))
 
         if http_method == "GET":
             query = [path + "?"]
@@ -469,9 +467,7 @@ class MyJDConnector:
                 query += [
                     "signature="
                     + str(
-                        self.__create_signature(
-                            self.__login_secret, query[0] + "&".join(query[1:])
-                        )
+                        self.__create_signature(self.__login_secret, query[0] + "&".join(query[1:]))
                     )
                 ]
 
@@ -489,7 +485,7 @@ class MyJDConnector:
             s_query = query[0] + "&".join(query[1:])
             encrypted_response = requests.get(api + s_query, timeout=3)
         else:
-            params_list: List[Any] = []
+            params_list: list[Any] = []
             if params is not None:
                 for param in params:
                     if not isinstance(param, list):
@@ -539,14 +535,10 @@ class MyJDConnector:
                         raise Exception("No device encryption token\n")
 
                     error_msg = json.loads(
-                        self.__decrypt(
-                            self.__device_encryption_token, encrypted_response.text
-                        )
+                        self.__decrypt(self.__device_encryption_token, encrypted_response.text)
                     )
                 except json.JSONDecodeError:
-                    raise Exception(
-                        "Failed to decode response: {}", encrypted_response.text
-                    )
+                    raise Exception("Failed to decode response: {}", encrypted_response.text)
 
             msg = (
                 "\n\tSOURCE: "
@@ -568,7 +560,6 @@ class MyJDConnector:
             raise (Exception(msg))
 
         if binary:
-
             self.update_request_id()
 
             # Binary content is not encrypted
@@ -581,17 +572,13 @@ class MyJDConnector:
 
                 response = self.__decrypt(self.__login_secret, encrypted_response.text)
             else:
-                response = self.__decrypt(
-                    self.__server_encryption_token, encrypted_response.text
-                )
+                response = self.__decrypt(self.__server_encryption_token, encrypted_response.text)
 
         else:
             if not self.__device_encryption_token:
                 raise Exception("No device encryption token\n")
 
-            response = self.__decrypt(
-                self.__device_encryption_token, encrypted_response.text
-            )
+            response = self.__decrypt(self.__device_encryption_token, encrypted_response.text)
 
         jsondata = json.loads(response.decode("utf-8"))
         if jsondata["rid"] != self.__request_id:

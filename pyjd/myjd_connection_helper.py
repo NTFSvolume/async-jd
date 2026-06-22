@@ -1,5 +1,5 @@
 import time
-from typing import List, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from .jd_device import JDDevice
@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 
 class MyJDConnectionHelper:
     def __init__(
-        self, device: "JDDevice", refresh_direct_connections: bool = True
+        self,
+        device: "JDDevice",
+        refresh_direct_connections: bool = True,
     ) -> None:
-
         self.device = device
 
-        self.__direct_connection_info: Optional[list] = None
+        self.__direct_connection_info: list | None = None
         if refresh_direct_connections:
             print("refreshing direct connections")
             self.__refresh_direct_connections()
@@ -26,15 +27,15 @@ class MyJDConnectionHelper:
         response = self.device.connector.request_api(
             "/device/getDirectConnectionInfos", "POST", None, self.__action_url()
         )
+        if response is None:
+            return
 
-        if (
-            response is not None
-            and "data" in response
-            and "infos" in response["data"]
-            and len(response["data"]["infos"]) != 0
-        ):
-
-            self.__update_direct_connections(response["data"]["infos"])
+        try:
+            info = response["data"]["infos"]
+        except LookupError:
+            return
+        if len(info) > 0:
+            self.__update_direct_connections(info)
 
     def __update_direct_connections(self, direct_info: list) -> None:
         """Update the direct_connection info while keeping the correct order.
@@ -76,7 +77,7 @@ class MyJDConnectionHelper:
         self.__direct_connection_enabled = False
         self.__direct_connection_info = None
 
-    def get_direct_connection_info(self) -> Optional[list]:
+    def get_direct_connection_info(self) -> list | None:
         """
         Get information about the direct connections.
 
@@ -99,10 +100,11 @@ class MyJDConnectionHelper:
     def action(
         self,
         path: str,
-        params: List = [],
+        params: Any | None = [],
         http_action: str = "POST",
+        *,
         binary: bool = False,
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Execute any action for the device using the params.
 
         All the information about the parameters and their default values,
@@ -130,7 +132,6 @@ class MyJDConnectionHelper:
             or self.__direct_connection_info is None
             or time.time() < self.__direct_connection_cooldown
         ):
-
             # No direct connection available, use the MyJD API
             response = self.device.connector.request_api(
                 path, http_action, params, action_url, binary=binary
@@ -138,79 +139,69 @@ class MyJDConnectionHelper:
 
             if response is None:
                 return None
-            elif binary:
+            if binary:
                 return response
-            else:
-                if (
-                    self.__direct_connection_enabled
-                    and time.time() >= self.__direct_connection_cooldown
-                ):
-                    self.__refresh_direct_connections()
-
-                if "data" in response:
-                    return response["data"]
-                return response
-
-        else:
-
-            # A direct connection is available, try to use it
-            for conn in self.__direct_connection_info:
-
-                if time.time() > conn["cooldown"]:
-
-                    # Use the direct connection
-                    connection = conn["conn"]
-                    api = f'http://{connection["ip"]}:{connection["port"]}'
-
-                    response = self.device.connector.request_api(
-                        path, http_action, params, action_url, api, binary=binary
-                    )
-
-                    if response is None:
-                        # Don't try this connection for a minute.
-                        conn["cooldown"] = time.time() + 60
-
-                    elif binary:
-                        return response
-
-                    else:
-                        # This connection worked, push it to the top of the
-                        # list.
-                        self.__direct_connection_info.remove(conn)
-                        self.__direct_connection_info.insert(0, conn)
-                        self.__direct_connection_consecutive_failures = 0
-
-                        if "data" in response:
-                            return response["data"]
-                        return response
-
-            # None of the direct connections worked, set a cooldown for all
-            # direct connections
-            self.__direct_connection_consecutive_failures += 1
-            self.__direct_connection_cooldown = int(
-                time.time() + (60 * self.__direct_connection_consecutive_failures)
-            )
-
-            # Use the MyJD API instead
-            response = self.device.connector.request_api(
-                path, http_action, params, action_url, binary=binary
-            )
-
-            if response is None:
-                return None
-
-            self.__refresh_direct_connections()
+            if (
+                self.__direct_connection_enabled
+                and time.time() >= self.__direct_connection_cooldown
+            ):
+                self.__refresh_direct_connections()
 
             if "data" in response:
                 return response["data"]
             return response
 
+        # A direct connection is available, try to use it
+        for conn in self.__direct_connection_info:
+            if time.time() > conn["cooldown"]:
+                # Use the direct connection
+                connection = conn["conn"]
+                api = f"http://{connection['ip']}:{connection['port']}"
+
+                response = self.device.connector.request_api(
+                    path, http_action, params, action_url, api, binary=binary
+                )
+
+                if response is None:
+                    # Don't try this connection for a minute.
+                    conn["cooldown"] = time.time() + 60
+
+                elif binary:
+                    return response
+
+                else:
+                    # This connection worked, push it to the top of the
+                    # list.
+                    self.__direct_connection_info.remove(conn)
+                    self.__direct_connection_info.insert(0, conn)
+                    self.__direct_connection_consecutive_failures = 0
+
+                    if "data" in response:
+                        return response["data"]
+                    return response
+
+        # None of the direct connections worked, set a cooldown for all
+        # direct connections
+        self.__direct_connection_consecutive_failures += 1
+        self.__direct_connection_cooldown = int(
+            time.time() + (60 * self.__direct_connection_consecutive_failures)
+        )
+
+        # Use the MyJD API instead
+        response = self.device.connector.request_api(
+            path, http_action, params, action_url, binary=binary
+        )
+
+        if response is None:
+            return None
+
+        self.__refresh_direct_connections()
+
+        if "data" in response:
+            return response["data"]
+        return response
+
     def __action_url(self) -> str:
         """Generate the action url for the device and session."""
 
-        return (
-            "/t_"
-            + self.device.connector.get_session_token()
-            + "_"
-            + self.device.device_id
-        )
+        return "/t_" + self.device.connector.get_session_token() + "_" + self.device.device_id

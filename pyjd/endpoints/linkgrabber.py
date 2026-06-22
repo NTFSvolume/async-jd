@@ -1,4 +1,7 @@
-from .jd_types import (
+from typing import Any
+
+from pyjd.endpoints import Action
+from pyjd.jd_types import (
     AddLinksQuery,
     CrawledLink,
     CrawledLinkQuery,
@@ -10,18 +13,9 @@ from .jd_types import (
     LinkCrawlerJobsQuery,
     LinkVariant,
 )
-from typing import Optional, Any
 
 
-class LinkGrabber:
-    def __init__(self, device):
-        self.device = device
-        self.endpoint = "linkgrabberv2"
-
-    def action(self, route: str, params: Optional[Any] = None) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
+class LinkGrabber(Action, endpoint="linkgrabberv2"):
     def abort(self, job_id: int = -1) -> bool:
         """Abort one or all jobs.
 
@@ -31,12 +25,8 @@ class LinkGrabber:
         :rtype: bool
         """
 
-        params = None
-        if job_id > -1:
-            params = [job_id]
-
-        resp = self.action("/abort", params)
-        return resp
+        params = [job_id] if job_id > -1 else None
+        return self.action("/abort", params)
 
     def add_container(self, container_type: str, content: str) -> LinkCollectingJob:
         """Add a container of type and content.
@@ -51,8 +41,7 @@ class LinkGrabber:
 
         params = [container_type, content]
         resp = self.action("/addContainer", params)
-        job = LinkCollectingJob(**resp)
-        return job
+        return LinkCollectingJob(**resp)
 
     def add_links(self, add_links_query: AddLinksQuery) -> LinkCollectingJob:
         """
@@ -66,8 +55,7 @@ class LinkGrabber:
 
         params = [add_links_query.dict()]
         resp = self.action("/addLinks", params)
-        job = LinkCollectingJob(**resp)
-        return job
+        return LinkCollectingJob(**resp)
 
     def add_variant_copy(
         self,
@@ -84,8 +72,7 @@ class LinkGrabber:
             destination_package_id,
             variant_id,
         ]
-        resp = self.action("/addVariantCopy", params)
-        return resp
+        return self.action("/addVariantCopy", params)
 
     def cleanup(
         self,
@@ -113,21 +100,18 @@ class LinkGrabber:
 
         params = [link_ids, package_ids]
         params += [delete_action.value, mode.value, selection_type.value]
-        resp = self.action("/cleanup", params)
-        return resp
+        return self.action("/cleanup", params)
 
     def clear_list(self):
         """Clears Linkgrabbers list."""
 
-        resp = self.action("/clearList")
-        return resp
+        return self.action("/clearList")
 
     def get_children_changed(self, structure_watermark):
         """Unkown."""
 
         params = [structure_watermark]
-        resp = self.action("/getChildrenChanged", params)
-        return resp
+        return self.action("/getChildrenChanged", params)
 
     def get_download_folder_history_selection_base(self):
         """Returns the download folder selection.
@@ -136,10 +120,14 @@ class LinkGrabber:
         :rtype: List[str]
         """
 
-        resp = self.action("/getDownloadFolderHistorySelectionBase")
-        return resp
+        return self.action("/getDownloadFolderHistorySelectionBase")
 
-    def get_download_urls(self, link_ids, package_ids, url_display_types=["ORIGIN"]):
+    def get_download_urls(
+        self,
+        link_ids: list[int],
+        package_ids: list[int],
+        url_display_types: list[str] = ["ORIGIN"],
+    ):
         """Gets download urls from Linkgrabber.
 
         :param package_ids: Package UUIDs.
@@ -151,16 +139,14 @@ class LinkGrabber:
         """
 
         params = [link_ids, package_ids, url_display_types]
-        resp = self.action("/getDownloadUrls", params)
-        return resp
+        return self.action("/getDownloadUrls", params)
 
     def get_package_count(self):
         """Get package count in linkgrabber"""
 
-        resp = self.action("/getPackageCount")
-        return resp
+        return self.action("/getPackageCount")
 
-    def get_variants(self, link_id):
+    def get_variants(self, link_id: str):
         """Gets the variants of a url/download (not package)
 
         For example a youtube link gives you a package with three downloads,
@@ -188,33 +174,24 @@ class LinkGrabber:
 
         params = [link_id]
         resp = self.action("/getVariants", params)
-
-        link_variants = []
-        for variant in resp:
-            link_variant = LinkVariant(variant)
-            link_variants.append(link_variant)
-
-        return link_variants
+        return [LinkVariant(variant) for variant in resp]
 
     def is_collecting(self):
         """Bool status query about the collecting process"""
 
-        resp = self.action("/isCollecting")
-        return resp
+        return self.action("/isCollecting")
 
     def move_links(self, link_ids, after_link_id, dest_package_id):
         """Unkown."""
 
         params = [link_ids, after_link_id, dest_package_id]
-        resp = self.action("/moveLinks", params)
-        return resp
+        return self.action("/moveLinks", params)
 
     def move_packages(self, package_ids, after_dest_package_id):
         """Unkown."""
 
         params = [package_ids, after_dest_package_id]
-        resp = self.action("/movePackages", params)
-        return resp
+        return self.action("/movePackages", params)
 
     def move_to_downloadlist(self, link_ids, package_ids):
         """Moves packages and/or links to download list.
@@ -226,8 +203,7 @@ class LinkGrabber:
         """
 
         params = [link_ids, package_ids]
-        resp = self.action("/moveToDownloadlist", params)
-        return resp
+        return self.action("/moveToDownloadlist", params)
 
     def move_to_new_package(self, link_ids, package_ids, new_pkg_name, download_path):
         """Moves packages and/or links to a new package
@@ -243,12 +219,9 @@ class LinkGrabber:
         """
 
         params = [link_ids, package_ids, new_pkg_name, download_path]
-        resp = self.action("/movetoNewPackage", params)
-        return resp
+        return self.action("/movetoNewPackage", params)
 
-    def query_link_crawler_jobs(
-        self, link_crawler_jobs_query=LinkCrawlerJobsQuery.default()
-    ):
+    def query_link_crawler_jobs(self, link_crawler_jobs_query=LinkCrawlerJobsQuery.default()):
         """Query link crawler jobs.
 
         :param crawled_link_query: Query to filter by
@@ -260,12 +233,7 @@ class LinkGrabber:
         params = [link_crawler_jobs_query.dict()]
         resp = self.action("/queryLinkCrawlerJobs", params)
 
-        crawler_jobs = []
-        for job in resp:
-            crawler_job = JobLinkCrawler(**job)
-            crawler_jobs.append(crawler_job)
-
-        return crawler_jobs
+        return [JobLinkCrawler(**job) for job in resp]
 
     def query_links(self, crawled_link_query=CrawledLinkQuery.default()):
         """Get the links in the linkcollector/linkgrabber
@@ -280,12 +248,7 @@ class LinkGrabber:
         params = [crawled_link_query.dict()]
         resp = self.action("/queryLinks", params)
 
-        crawled_links = []
-        for link in resp:
-            crawled_link = CrawledLink(**link)
-            crawled_links.append(crawled_link)
-
-        return crawled_links
+        return [CrawledLink(**link) for link in resp]
 
     def query_packages(self, crawled_package_query=CrawledPackageQuery.default()):
         """Get the crawled packages in the linkgrabber
@@ -298,47 +261,37 @@ class LinkGrabber:
         params = [crawled_package_query.dict()]
         resp = self.action("/queryPackages", params)
 
-        crawled_packages = []
-        for package in resp:
-            crawled_package = CrawledPackage(**package)
-            crawled_packages.append(crawled_package)
-
-        return crawled_packages
+        return [CrawledPackage(**package) for package in resp]
 
     def remove_links(self, link_ids, package_ids):
         """Unknown."""
 
         params = [link_ids, package_ids]
-        resp = self.action("/removeLinks", params)
-        return resp
+        return self.action("/removeLinks", params)
 
     def rename_link(self, link_id, new_name):
         """Unknown."""
 
         params = [link_id, new_name]
-        resp = self.action("/renameLink", params)
-        return resp
+        return self.action("/renameLink", params)
 
     def rename_package(self, package_id, new_name):
         """Unknown."""
 
         params = [package_id, new_name]
-        resp = self.action("/renamePackage", params)
-        return resp
+        return self.action("/renamePackage", params)
 
     def set_download_directory(self, directory, package_ids):
         """Unknown."""
 
         params = [directory, package_ids]
-        resp = self.action("/setDownloadDirectory", params)
-        return resp
+        return self.action("/setDownloadDirectory", params)
 
     def set_download_password(self, link_ids, package_ids, password):
         """Unknown."""
 
         params = [link_ids, package_ids, password]
-        resp = self.action("/setDownloadPassword", params)
-        return resp
+        return self.action("/setDownloadPassword", params)
 
     def set_enabled(self, enabled, link_ids, package_ids):
         """Sets the UUIDs as enabled
@@ -352,8 +305,7 @@ class LinkGrabber:
         """
 
         params = [enabled, link_ids, package_ids]
-        resp = self.action("/setEnabled", params=params)
-        return resp
+        return self.action("/setEnabled", params=params)
 
     def set_priority(self, priority, link_ids, package_ids):
         """Sets the priority of links or packages.
@@ -368,32 +320,27 @@ class LinkGrabber:
         """
 
         params = [priority, link_ids, package_ids]
-        resp = self.action("/setPriority", params)
-        return resp
+        return self.action("/setPriority", params)
 
     def set_variant(self, link_id, variant_id):
         """Unknown."""
 
         params = [link_id, variant_id]
-        resp = self.action("/setVariant", params)
-        return resp
+        return self.action("/setVariant", params)
 
     def split_package_by_hoster(self, link_ids, pkg_ids):
         """Unknown."""
 
         params = [link_ids, pkg_ids]
-        resp = self.action("/splitPackageByHoster", params)
-        return resp
+        return self.action("/splitPackageByHoster", params)
 
     def start_online_check(self, link_ids, package_ids):
         """Unknown."""
 
         params = [link_ids, package_ids]
-        resp = self.action("/startOnlineStatusCheck", params)
-        return resp
+        return self.action("/startOnlineStatusCheck", params)
 
     def help(self):
         """Returns the API help."""
 
-        resp = self.action("/linkgrabberv2/help", http_action="GET")
-        return resp
+        return self.action("/linkgrabberv2/help", http_action="GET")

@@ -28,24 +28,16 @@ The workflow for using events is this:
 
 """
 
-from .jd_types import SubscriptionResponse, PublisherResponse
-from typing import Optional, Any, List
+from pyjd.endpoints import Action
+from pyjd.jd_types import PublisherResponse, SubscriptionResponse
 
 
-class Events:
-    def __init__(self, device):
-        self.device = device
-        self.endpoint = "events"
-
-    def action(self, route: str, params: Optional[Any] = None) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
+class Events(Action, endpoint="events"):
     def add_subscription(
         self,
         subscription_id: int,
-        subscriptions: List[str] = [],
-        exclusions: List[str] = [],
+        subscriptions: list[str] = [],
+        exclusions: list[str] = [],
     ) -> SubscriptionResponse:
         """Add subscriptions/exclusions to an existing Subscription.
 
@@ -62,8 +54,7 @@ class Events:
 
         params = [subscription_id, subscriptions, exclusions]
         resp = self.action("/addsubscription", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
     def change_subscription_timeouts(
         self, subscription_id: int, poll_timeout: int, keep_alive: int
@@ -84,8 +75,7 @@ class Events:
 
         params = [subscription_id, poll_timeout, keep_alive]
         resp = self.action("/changesubscriptiontimeouts", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
     def get_subscription(self, subscription_id: int) -> SubscriptionResponse:
         """Get a Subscription object by id.
@@ -96,10 +86,9 @@ class Events:
 
         params = [subscription_id]
         resp = self.action("/getsubscription", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
-    def listen(self, subscription_id: int) -> List[dict]:
+    def listen(self, subscription_id: int) -> list[dict]:
         """Listen for events for a subscription.
 
         :param subscription_id: The id for a subscription
@@ -109,26 +98,19 @@ class Events:
         """
 
         params = [subscription_id]
-        resp = self.action("/listen", params)
-        return resp
+        return self.action("/listen", params)
 
-    def list_publisher(self) -> List[PublisherResponse]:
+    def list_publisher(self) -> list[PublisherResponse]:
         """List all event publishers and their events."""
 
         resp = self.action("/listpublisher")
-
-        publisher_responses = []
-        for response in resp:
-            publisher_response = PublisherResponse(**response)
-            publisher_responses.append(publisher_response)
-
-        return publisher_responses
+        return [PublisherResponse(**response) for response in resp]
 
     def remove_subscription(
         self,
         subscription_id: int,
-        subscriptions: List[str] = [],
-        exclusions: List[str] = [],
+        subscriptions: list[str] = [],
+        exclusions: list[str] = [],
     ) -> SubscriptionResponse:
         """Remove subscriptions/exclusions to an existing Subscription.
 
@@ -145,14 +127,13 @@ class Events:
 
         params = [subscription_id, subscriptions, exclusions]
         resp = self.action("/removesubscription", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
     def set_subscription(
         self,
         subscription_id: int,
-        subscriptions: List[str] = [],
-        exclusions: List[str] = [],
+        subscriptions: list[str] = [],
+        exclusions: list[str] = [],
     ) -> SubscriptionResponse:
         """Set subscriptions/exclusions for an existing Subscription.
 
@@ -169,11 +150,10 @@ class Events:
 
         params = [subscription_id, subscriptions, exclusions]
         resp = self.action("/setsubscription", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
     def subscribe(
-        self, subscriptions: List[str] = [], exclusions: List[str] = []
+        self, subscriptions: list[str] = [], exclusions: list[str] = []
     ) -> SubscriptionResponse:
         """Create a new subscription.
 
@@ -187,8 +167,7 @@ class Events:
 
         params = [subscriptions, exclusions]
         resp = self.action("/subscribe", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)
 
     def unsubscribe(self, subscription_id: int) -> SubscriptionResponse:
         """Create a new subscription.
@@ -201,5 +180,4 @@ class Events:
 
         params = [subscription_id]
         resp = self.action("/unsubscribe", params)
-        subscription_response = SubscriptionResponse(**resp)
-        return subscription_response
+        return SubscriptionResponse(**resp)

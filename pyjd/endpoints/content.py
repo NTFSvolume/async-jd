@@ -1,19 +1,10 @@
-from .jd_types import IconDescriptor
-from typing import Optional, Any, TYPE_CHECKING
+from __future__ import annotations
 
-if TYPE_CHECKING:
-    from .jd_device import JDDevice
+from pyjd.endpoints import Action
+from pyjd.jd_types import IconDescriptor
 
 
-class Content:
-    def __init__(self, device: "JDDevice") -> None:
-        self.device = device
-        self.endpoint = "contentV2"
-
-    def action(self, route: str, params: Optional[Any] = None, binary: bool = False) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params, binary=binary)
-
+class Content(Action, endpoint="contentV2"):
     def get_fav_icon(self, hostername: str) -> bytes:
         """Get the fav icon for a hoster.
 
@@ -25,8 +16,7 @@ class Content:
         """
 
         params = [hostername]
-        resp = self.action("/getFavIcon", params, True)
-        return resp
+        return self.action("/getFavIcon", params, binary=True)
 
     def get_file_icon(self, filename: str) -> bytes:
         """Get the file icon.
@@ -38,8 +28,7 @@ class Content:
         """
 
         params = [filename]
-        resp = self.action("/getFileIcon", params, True)
-        return resp
+        return self.action("/getFileIcon", params, True)
 
     def get_icon(self, key: str, size: int) -> bytes:
         """Get an icon, scaled for size.
@@ -53,8 +42,7 @@ class Content:
         """
 
         params = [key, size]
-        resp = self.action("/getIcon", params, True)
-        return resp
+        return self.action("/getIcon", params, True)
 
     def get_icon_description(self, key: str) -> IconDescriptor:
         """Get an icon description.
@@ -67,6 +55,4 @@ class Content:
 
         params = [key]
         resp = self.action("/getIconDescription", params)
-        print(resp)
-        descriptor = IconDescriptor(**resp)
-        return descriptor
+        return IconDescriptor(**resp)

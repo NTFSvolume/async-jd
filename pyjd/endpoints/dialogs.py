@@ -1,19 +1,8 @@
-from .jd_types import DialogInfo, DialogTypeInfo
-from typing import Optional, Any, List, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .jd_device import JDDevice
+from pyjd.endpoints import Action
+from pyjd.jd_types import DialogInfo, DialogTypeInfo
 
 
-class Dialogs:
-    def __init__(self, device: "JDDevice") -> None:
-        self.device = device
-        self.endpoint = "dialogs"
-
-    def action(self, route: str, params: Optional[Any] = None) -> bool:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
+class Dialogs(Action, endpoint="dialogs"):
     def answer(self, id: int, data: dict) -> Any:
         """Answer the dialog.
 
@@ -33,9 +22,7 @@ class Dialogs:
 
         params = [id, data]
         resp = self.action("/answer", params)
-        if resp == "":
-            return True
-        return False
+        return resp == ""
 
     def get(self, id: int, icon: bool = True, properties: bool = True) -> DialogInfo:
         """Get the requested dialog info.
@@ -67,14 +54,11 @@ class Dialogs:
         resp = self.action("/getTypeInfo", params)
         return DialogTypeInfo(**resp)
 
-    def list(self) -> List[int]:
+    def list(self) -> list[int]:
         """List all open dialog ids.
 
         :returns: List of dialog ids
         :rtype: List[int]
         """
 
-        resp = self.action("/list")
-        if not resp:
-            return []
-        return resp
+        return self.action("/list") or []

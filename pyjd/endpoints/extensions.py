@@ -1,16 +1,8 @@
-from .jd_types import Extension, ExtensionQuery
-from typing import Optional, Any, List
+from pyjd.endpoints import Action
+from pyjd.jd_types import Extension, ExtensionQuery
 
 
-class Extensions:
-    def __init__(self, device):
-        self.device = device
-        self.endpoint = "extensions"
-
-    def action(self, route: str, params: Optional[Any] = None) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
+class Extensions(Action, endpoint="extensions"):
     def install(self, extension_id: str) -> bool:
         """Install the extension with extension_id.
 
@@ -21,8 +13,7 @@ class Extensions:
         """
 
         params = [extension_id]
-        resp = self.action("/install", params)
-        return resp
+        return self.action("/install", params)
 
     def is_enabled(self, extension_id: str) -> bool:
         """Check if the extension of extension_id is enabled.
@@ -34,8 +25,7 @@ class Extensions:
         """
 
         params = [extension_id]
-        resp = self.action("/isEnabled", params)
-        return resp
+        return self.action("/isEnabled", params)
 
     def is_installed(self, extension_id: str) -> bool:
         """Check if the extension of extension_id is installed.
@@ -47,12 +37,9 @@ class Extensions:
         """
 
         params = [extension_id]
-        resp = self.action("/isInstalled", params)
-        return resp
+        return self.action("/isInstalled", params)
 
-    def list_extensions(
-        self, query: ExtensionQuery = ExtensionQuery.default()
-    ) -> List[Extension]:
+    def list_extensions(self, query: ExtensionQuery = ExtensionQuery.default()) -> list[Extension]:
         """List all extensions.
 
         :param query: A query to filter by (default: all)
@@ -63,13 +50,7 @@ class Extensions:
 
         params = [query.dict()]
         resp = list(self.action("/list", params))
-
-        extensions = []
-        for ext in resp:
-            extension = Extension(**ext)
-            extensions.append(extension)
-
-        return extensions
+        return [Extension(**ext) for ext in resp]
 
     def set_enabled(self, extension_id: str, enabled: bool) -> bool:
         """Enable/Disable an extensions.
@@ -83,5 +64,4 @@ class Extensions:
         """
 
         params = [extension_id, enabled]
-        resp = self.action("/setEnabled", params)
-        return resp
+        return self.action("/setEnabled", params)

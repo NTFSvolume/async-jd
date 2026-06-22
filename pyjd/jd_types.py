@@ -8,13 +8,9 @@ For more information, see here:
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
+
 from pydantic import BaseModel, Field
-from typing import Any, List, Optional
-
-
-#
-# enums and constants
-#
 
 
 class AbstractType(str, Enum):
@@ -169,16 +165,16 @@ class Account(BaseModel):
     Initializes itself from a query result (dict)
     """
 
-    enabled: Optional[bool]
-    errorString: Optional[str]
-    errorType: Optional[str]
-    hostname: Optional[str]
-    trafficLeft: Optional[int]
-    trafficMax: Optional[int]
-    username: Optional[str]
-    uuid: Optional[int]
-    valid: Optional[bool]
-    validUntil: Optional[int]
+    enabled: bool | None
+    errorString: str | None
+    errorType: str | None
+    hostname: str | None
+    trafficLeft: int | None
+    trafficMax: int | None
+    username: str | None
+    uuid: int | None
+    valid: bool | None
+    validUntil: int | None
 
     def __repr__(self) -> str:
         return f"<Account ({self.uuid})>"
@@ -199,7 +195,7 @@ class AccountQuery(BaseModel):
     trafficLeft: bool = True
     trafficMax: bool = True
     userName: bool = True
-    uuidlist: Optional[List[int]]
+    uuidlist: list[int] | None
     valid: bool = True
     validUntil: bool = True
 
@@ -223,30 +219,28 @@ class AccountQuery(BaseModel):
 
 
 class AdvancedConfigAPIEntry(BaseModel):
-
-    abstractType: Optional[AbstractType]
-    defaultValue: Optional[Any]
-    docs: Optional[str]
-    enumLabel: Optional[str]
-    enumOptions: Optional[Any]
-    interfaceName: Optional[str]
-    key: Optional[str]
-    storage: Optional[str]
-    type: Optional[str]
-    value: Optional[Any]
+    abstractType: AbstractType | None
+    defaultValue: Any | None
+    docs: str | None
+    enumLabel: str | None
+    enumOptions: Any | None
+    interfaceName: str | None
+    key: str | None
+    storage: str | None
+    type: str | None
+    value: Any | None
 
     def __repr__(self):
         return f"<AdvancedConfigAPIEntry ({self.key})>"
 
 
 class AdvancedConfigQuery(BaseModel):
-
-    configInterface: Optional[str]
+    configInterface: str | None
     defaultValues: bool
     description: bool
     enumInfo: bool
     includeExtensions: bool
-    pattern: Optional[str]
+    pattern: str | None
     values: bool
 
     def __repr__(self):
@@ -266,35 +260,33 @@ class AdvancedConfigQuery(BaseModel):
 
 
 class BasicAuth(BaseModel):
-
-    created: Optional[int]
-    enabled: Optional[bool]
-    hostmask: Optional[str]
-    id: Optional[int]
-    lastValidated: Optional[int]
-    password: Optional[str]
-    type: Optional[BasicAuthType]
-    username: Optional[str]
+    created: int | None
+    enabled: bool | None
+    hostmask: str | None
+    id: int | None
+    lastValidated: int | None
+    password: str | None
+    type: BasicAuthType | None
+    username: str | None
 
     def __repr__(self):
         return f"<BasicAuth ({self.id})>"
 
 
 class AddLinksQuery(BaseModel):
-
-    assignJobID: Optional[bool]
-    autoExtract: Optional[bool]
-    autostart: Optional[bool]
-    dataURLs: List[str] = []
-    deepDecrypt: Optional[bool]
-    destinationFolder: Optional[str]
-    downloadPassword: Optional[str]
-    extractPassword: Optional[str]
-    links: Optional[str]
-    overwritePackagizerRules: Optional[bool]
-    packageName: Optional[str]
-    priority: Optional[Priority] = Priority.DEFAULT
-    sourceUrl: Optional[str]
+    assignJobID: bool | None
+    autoExtract: bool | None
+    autostart: bool | None
+    dataURLs: list[str] = []
+    deepDecrypt: bool | None
+    destinationFolder: str | None
+    downloadPassword: str | None
+    extractPassword: str | None
+    links: str | None
+    overwritePackagizerRules: bool | None
+    packageName: str | None
+    priority: Priority | None = Priority.DEFAULT
+    sourceUrl: str | None
 
     def __repr__(self):
         return f"<AddLinksQuery ({self.packageName})>"
@@ -307,7 +299,7 @@ class APIQuery(BaseModel):
     """
 
     empty: bool
-    forNullKey: Optional[str]
+    forNullKey: str | None
     maxResults: int
     startAt: int
 
@@ -320,69 +312,65 @@ class APIQuery(BaseModel):
 
 
 class CaptchaJob(BaseModel):
-
-    captchaCategory: Optional[str]
-    created: Optional[int]
-    explain: Optional[str]
-    hoster: Optional[str]
-    id: Optional[int]
-    link: Optional[int]
-    timeout: Optional[int]
-    type: Optional[str]
+    captchaCategory: str | None
+    created: int | None
+    explain: str | None
+    hoster: str | None
+    id: int | None
+    link: int | None
+    timeout: int | None
+    type: str | None
 
     def __repr__(self):
         return f"<CaptchaJob ({self.id})>"
 
 
 class LinkVariant(BaseModel):
-
-    iconKey: Optional[str]
-    id: Optional[str]
-    name: Optional[str]
+    iconKey: str | None
+    id: str | None
+    name: str | None
 
     def __repr__(self):
         return f"<LinkVariant ({self.id})>"
 
 
 class CrawledLink(BaseModel):
-
-    availability: Optional[AvailableLinkState]
-    bytesTotal: Optional[int]
-    comment: Optional[str]
-    downloadPassword: Optional[str]
-    enabled: Optional[bool]
-    host: Optional[str]
-    name: Optional[str]
-    packageUUID: Optional[int]
-    priority: Optional[Priority]
-    url: Optional[str]
-    uuid: Optional[int]
-    variant: Optional[LinkVariant]
-    variants: Optional[bool]
+    availability: AvailableLinkState | None
+    bytesTotal: int | None
+    comment: str | None
+    downloadPassword: str | None
+    enabled: bool | None
+    host: str | None
+    name: str | None
+    packageUUID: int | None
+    priority: Priority | None
+    url: str | None
+    uuid: int | None
+    variant: LinkVariant | None
+    variants: bool | None
 
     def __repr__(self):
         return f"<CrawledLink ({self.uuid})>"
 
 
 class CrawledLinkQuery(BaseModel):
-
-    availability: Optional[bool]
-    bytesTotal: Optional[bool]
-    comment: Optional[bool]
-    enabled: Optional[bool]
-    host: Optional[bool]
-    jobUUIDs: Optional[List[int]]
-    maxResults: Optional[int]
-    packageUUIDs: Optional[List[int]]
-    password: Optional[bool]
-    priority: Optional[bool]
-    startAt: Optional[int]
-    status: Optional[bool]
-    url: Optional[bool]
-    variantID: Optional[bool]
-    variantIcon: Optional[bool]
-    variantName: Optional[bool]
-    variants: Optional[bool]
+    availability: bool | None
+    bytesTotal: bool | None
+    comment: bool | None
+    enabled: bool | None
+    host: bool | None
+    jobUUIDs: list[int] | None
+    maxResults: int | None
+    packageUUIDs: list[int] | None
+    password: bool | None
+    priority: bool | None
+    startAt: int | None
+    status: bool | None
+    url: bool | None
+    variantID: bool | None
+    variantIcon: bool | None
+    variantName: bool | None
+    variants: bool | None
 
     def __repr__(self):
         return "<CrawledLinkQuery>"
@@ -411,43 +399,41 @@ class CrawledLinkQuery(BaseModel):
 
 
 class CrawledPackage(BaseModel):
-
-    bytesTotal: Optional[int]
-    childCount: Optional[int]
-    comment: Optional[str]
-    downloadPassword: Optional[str]
-    enabled: Optional[bool]
-    hosts: Optional[List[str]]
-    name: Optional[str]
-    offlineCount: Optional[int]
-    onlineCount: Optional[int]
-    priority: Optional[Priority]
-    saveTo: Optional[str]
-    tempUnknownCount: Optional[int]
-    unknownCount: Optional[int]
-    uuid: Optional[int]
+    bytesTotal: int | None
+    childCount: int | None
+    comment: str | None
+    downloadPassword: str | None
+    enabled: bool | None
+    hosts: list[str] | None
+    name: str | None
+    offlineCount: int | None
+    onlineCount: int | None
+    priority: Priority | None
+    saveTo: str | None
+    tempUnknownCount: int | None
+    unknownCount: int | None
+    uuid: int | None
 
     def __repr__(self):
         return f"<CrawledPackage ({self.uuid})"
 
 
 class CrawledPackageQuery(BaseModel):
-
-    availableOfflineCount: Optional[bool]
-    availableOnlineCount: Optional[bool]
-    availableTempUnknownCount: Optional[bool]
-    availableUnknownCount: Optional[bool]
-    bytesTotal: Optional[bool]
-    childCount: Optional[bool]
-    comment: Optional[bool]
-    enabled: Optional[bool]
-    hosts: Optional[bool]
-    maxResults: Optional[int]
-    packageUUIDs: Optional[List[int]]
-    priority: Optional[bool]
-    saveTo: Optional[bool]
-    startAt: Optional[int]
-    status: Optional[bool]
+    availableOfflineCount: bool | None
+    availableOnlineCount: bool | None
+    availableTempUnknownCount: bool | None
+    availableUnknownCount: bool | None
+    bytesTotal: bool | None
+    childCount: bool | None
+    comment: bool | None
+    enabled: bool | None
+    hosts: bool | None
+    maxResults: int | None
+    packageUUIDs: list[int] | None
+    priority: bool | None
+    saveTo: bool | None
+    startAt: int | None
+    status: bool | None
 
     def __repr__(self):
         return "<CrawledPackageQuery>"
@@ -474,81 +460,77 @@ class CrawledPackageQuery(BaseModel):
 
 
 class DialogInfo(BaseModel):
-    properties: Optional[dict[str, str]]
-    type: Optional[str]
+    properties: dict[str, str] | None
+    type: str | None
 
     def __repr__(self):
         return f"<DialogInfo ({self.type})>"
 
 
 class DialogTypeInfo(BaseModel):
-    in_: Optional[dict[str, str]] = Field(..., alias="in")
-    out: Optional[dict[str, str]]
+    in_: dict[str, str] | None = Field(..., alias="in")
+    out: dict[str, str] | None
 
     def __repr__(self):
         return "<DialogTypeInfo>"
 
 
 class DownloadLink(BaseModel):
-
-    addedDate: Optional[int]
-    bytesLoaded: Optional[int]
-    bytesTotal: Optional[int]
-    comment: Optional[str]
-    downloadPassword: Optional[str]
-    enabled: Optional[bool]
-    eta: Optional[int]
-    extractionStatus: Optional[str]
-    finished: Optional[bool]
-    finishedDate: Optional[int]
-    host: Optional[str]
-    name: Optional[str]
-    packageUUID: Optional[int]
-    priority: Optional[Priority]
-    running: Optional[int]
-    skipped: Optional[int]
-    speed: Optional[int]
-    status: Optional[str]
-    statusIconKey: Optional[str]
-    url: Optional[str]
-    uuid: Optional[int]
+    addedDate: int | None
+    bytesLoaded: int | None
+    bytesTotal: int | None
+    comment: str | None
+    downloadPassword: str | None
+    enabled: bool | None
+    eta: int | None
+    extractionStatus: str | None
+    finished: bool | None
+    finishedDate: int | None
+    host: str | None
+    name: str | None
+    packageUUID: int | None
+    priority: Priority | None
+    running: int | None
+    skipped: int | None
+    speed: int | None
+    status: str | None
+    statusIconKey: str | None
+    url: str | None
+    uuid: int | None
 
     def __repr__(self):
         return f"<DownloadLink ({self.uuid})>"
 
 
 class EnumOption(BaseModel):
-
-    label: Optional[str]
-    name: Optional[str]
+    label: str | None
+    name: str | None
 
     def __repr__(self):
         return f"<EnumOption ({self.name})>"
 
 
 class Extension(BaseModel):
-
-    configInterface: Optional[str]
-    description: Optional[str]
-    enabled: Optional[bool]
-    iconKey: Optional[str]
-    id: Optional[str]
-    installed: Optional[bool]
-    name: Optional[str]
+    configInterface: str | None
+    description: str | None
+    enabled: bool | None
+    iconKey: str | None
+    id: str | None
+    installed: bool | None
+    name: str | None
 
     def __repr__(self):
         return f"<Extension ({self.id})>"
 
 
 class ExtensionQuery(BaseModel):
-
-    configInterface: Optional[bool]
-    description: Optional[bool]
-    enabled: Optional[bool]
-    iconKey: Optional[bool]
-    installed: Optional[bool]
-    name: Optional[bool]
-    pattern: Optional[str]
+    configInterface: bool | None
+    description: bool | None
+    enabled: bool | None
+    iconKey: bool | None
+    installed: bool | None
+    name: bool | None
+    pattern: str | None
 
     def __repr__(self):
         return "<ExtensionQuery>"
@@ -567,90 +549,83 @@ class ExtensionQuery(BaseModel):
 
 
 class FilePackage(BaseModel):
-
-    activeTask: Optional[str]
-    bytesLoaded: Optional[int]
-    bytesTotal: Optional[int]
-    childCount: Optional[int]
-    comment: Optional[str]
-    downloadPassword: Optional[str]
-    enabled: Optional[bool]
-    eta: Optional[int]
-    finished: Optional[bool]
-    hosts: Optional[List[str]]
-    name: Optional[str]
-    priority: Optional[Priority]
-    running: Optional[bool]
-    saveTo: Optional[str]
-    speed: Optional[int]
-    status: Optional[str]
-    statusIconKey: Optional[str]
-    uuid: Optional[int]
+    activeTask: str | None
+    bytesLoaded: int | None
+    bytesTotal: int | None
+    childCount: int | None
+    comment: str | None
+    downloadPassword: str | None
+    enabled: bool | None
+    eta: int | None
+    finished: bool | None
+    hosts: list[str] | None
+    name: str | None
+    priority: Priority | None
+    running: bool | None
+    saveTo: str | None
+    speed: int | None
+    status: str | None
+    statusIconKey: str | None
+    uuid: int | None
 
     def __repr__(self):
         return f"<FilePackage ({self.uuid})>"
 
 
 class IconDescriptor(BaseModel):
-
-    cls: Optional[str]
-    key: Optional[str]
-    prps: Optional[Any]
-    rsc: Optional[List[IconDescriptor]]
+    cls: str | None
+    key: str | None
+    prps: Any | None
+    rsc: list[IconDescriptor] | None
 
     def __repr__(self):
         return f"<IconDescriptor ({self.key})>"
 
 
 class JobLinkCrawler(BaseModel):
-
-    broken: Optional[int]
-    checking: Optional[bool]
-    crawled: Optional[int]
-    crawledId: Optional[int]
-    crawling: Optional[bool]
-    filtered: Optional[int]
-    jobId: Optional[int]
-    unhandled: Optional[int]
+    broken: int | None
+    checking: bool | None
+    crawled: int | None
+    crawledId: int | None
+    crawling: bool | None
+    filtered: int | None
+    jobId: int | None
+    unhandled: int | None
 
     def __repr__(self):
         return f"<JobLinkCrawler ({self.crawledId})>"
 
 
 class LinkStatus(BaseModel):
-
-    host: Optional[str]
-    linkCheckID: Optional[str]
-    name: Optional[str]
-    size: Optional[int]
-    status: Optional[AvailableLinkState]
-    url: Optional[str]
+    host: str | None
+    linkCheckID: str | None
+    name: str | None
+    size: int | None
+    status: AvailableLinkState | None
+    url: str | None
 
     def __repr__(self):
         return f"<LinkStatus ({self.linkCheckID})>"
 
 
 class LinkCheckResult(BaseModel):
-
-    link: Optional[List[LinkStatus]]
-    status: Optional[Status]
+    link: list[LinkStatus] | None
+    status: Status | None
 
     def __repr__(self):
         return "<LinkCheckResult>"
 
 
 class LinkCollectingJob(BaseModel):
-
-    id: Optional[int]
+    id: int | None
 
     def __repr__(self):
         return f"<LinkCollectingJob ({self.id})>"
 
 
 class LinkCrawlerJobsQuery(BaseModel):
-
-    collectorInfo: Optional[bool]
-    jobIds: Optional[List[int]]
+    collectorInfo: bool | None
+    jobIds: list[int] | None
 
     def __repr__(self):
         return "<LinkCrawlerJobsQuery>"
@@ -661,28 +636,27 @@ class LinkCrawlerJobsQuery(BaseModel):
 
 
 class LinkQuery(BaseModel):
-
-    addedDate: Optional[bool]
-    bytesLoaded: Optional[bool]
-    bytesTotal: Optional[bool]
-    comment: Optional[bool]
-    enabled: Optional[bool]
-    eta: Optional[bool]
-    extractionStatus: Optional[bool]
-    finished: Optional[bool]
-    finishedDate: Optional[bool]
-    host: Optional[bool]
-    jobUUIDs: Optional[List[int]]
-    maxResults: Optional[int]
-    packageUUIDs: Optional[List[int]]
-    password: Optional[bool]
-    priority: Optional[bool]
-    running: Optional[bool]
-    skipped: Optional[bool]
-    speed: Optional[bool]
-    startAt: Optional[int]
-    status: Optional[bool]
-    url: Optional[bool]
+    addedDate: bool | None
+    bytesLoaded: bool | None
+    bytesTotal: bool | None
+    comment: bool | None
+    enabled: bool | None
+    eta: bool | None
+    extractionStatus: bool | None
+    finished: bool | None
+    finishedDate: bool | None
+    host: bool | None
+    jobUUIDs: list[int] | None
+    maxResults: int | None
+    packageUUIDs: list[int] | None
+    password: bool | None
+    priority: bool | None
+    running: bool | None
+    skipped: bool | None
+    speed: bool | None
+    startAt: int | None
+    status: bool | None
+    url: bool | None
 
     def __repr__(self):
         return "<LinkQuery>"
@@ -715,45 +689,42 @@ class LinkQuery(BaseModel):
 
 
 class LogFolder(BaseModel):
-
-    created: Optional[int]
-    current: Optional[bool]
-    lastModified: Optional[int]
+    created: int | None
+    current: bool | None
+    lastModified: int | None
 
     def __repr__(self):
         return "<LogFolder>"
 
 
 class MenuStructure(BaseModel):
-
-    children: Optional[List[MenuStructure]]
-    icon: Optional[str]
-    id: Optional[str]
-    name: Optional[str]
-    type: Optional[MenuType]
+    children: list[MenuStructure] | None
+    icon: str | None
+    id: str | None
+    name: str | None
+    type: MenuType | None
 
     def __repr__(self):
         return f"<MenuStructure ({self.id})>"
 
 
 class PackageQuery(BaseModel):
-
-    bytesLoaded: Optional[bool]
-    bytesTotal: Optional[bool]
-    childCount: Optional[bool]
-    comment: Optional[bool]
-    enabled: Optional[bool]
-    eta: Optional[bool]
-    finished: Optional[bool]
-    hosts: Optional[bool]
-    maxResults: Optional[int]
-    packageUUIDs: Optional[List[int]]
-    priority: Optional[bool]
-    running: Optional[bool]
-    saveTo: Optional[bool]
-    speed: Optional[bool]
-    startAt: Optional[int]
-    status: Optional[bool]
+    bytesLoaded: bool | None
+    bytesTotal: bool | None
+    childCount: bool | None
+    comment: bool | None
+    enabled: bool | None
+    eta: bool | None
+    finished: bool | None
+    hosts: bool | None
+    maxResults: int | None
+    packageUUIDs: list[int] | None
+    priority: bool | None
+    running: bool | None
+    saveTo: bool | None
+    speed: bool | None
+    startAt: int | None
+    status: bool | None
 
     def __repr__(self):
         return "<PackageQuery>"
@@ -781,30 +752,28 @@ class PackageQuery(BaseModel):
 
 
 class Plugin(BaseModel):
-
-    abstractType: Optional[AbstractType]
-    className: Optional[str]
-    defaultValue: Optional[Any]
-    displayName: Optional[str]
-    docs: Optional[str]
-    enumLabel: Optional[str]
-    enumOptions: Optional[Any]
-    interfaceName: Optional[str]
-    key: Optional[str]
-    pattern: Optional[str]
-    storage: Optional[str]
-    type: Optional[str]
-    value: Optional[Any]
-    version: Optional[str]
+    abstractType: AbstractType | None
+    className: str | None
+    defaultValue: Any | None
+    displayName: str | None
+    docs: str | None
+    enumLabel: str | None
+    enumOptions: Any | None
+    interfaceName: str | None
+    key: str | None
+    pattern: str | None
+    storage: str | None
+    type: str | None
+    value: Any | None
+    version: str | None
 
     def __repr__(self):
         return f"<Plugin ({self.className})>"
 
 
 class PluginsQuery(BaseModel):
-
-    pattern: Optional[str]
-    version: Optional[str]
+    pattern: str | None
+    version: str | None
 
     def __repr__(self):
         return f"<PluginsQuery ({self.pattern})>"
@@ -815,35 +784,31 @@ class PluginsQuery(BaseModel):
 
 
 class PublisherResponse(BaseModel):
-
-    eventids: Optional[List[str]]
-    publisher: Optional[str]
+    eventids: list[str] | None
+    publisher: str | None
 
     def __repr__(self):
         return f"<PublisherResponse ({self.publisher})>"
 
 
 class SubscriptionResponse(BaseModel):
-
-    exclusions: Optional[List[str]]
-    maxKeepalive: Optional[int]
-    maxPolltimeout: Optional[int]
-    subscribed: Optional[bool]
-    subscriptionid: Optional[int]
-    subscriptions: Optional[List[str]]
+    exclusions: list[str] | None
+    maxKeepalive: int | None
+    maxPolltimeout: int | None
+    subscribed: bool | None
+    subscriptionid: int | None
+    subscriptions: list[str] | None
 
     def __repr__(self):
         return f"<SubscriptionResponse ({self.subscriptionid})>"
 
 
 class IPandPort(BaseModel):
-
     port: int
     ip: str
 
 
 class DirectConnectionInfos(BaseModel):
-
-    infos: Optional[List[IPandPort]]
-    rebindProtectionDetected: Optional[bool]
-    mode: Optional[str]
+    infos: list[IPandPort] | None
+    rebindProtectionDetected: bool | None
+    mode: str | None

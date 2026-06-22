@@ -1,20 +1,12 @@
-from .jd_types import AdvancedConfigAPIEntry, AdvancedConfigQuery, EnumOption
-from typing import Optional, Any, List, TYPE_CHECKING
+import builtins
+from typing import Any
 
-if TYPE_CHECKING:
-    from .jd_device import JDDevice
+from pyjd.endpoints import Action
+from pyjd.jd_types import AdvancedConfigAPIEntry, AdvancedConfigQuery, EnumOption
 
 
-class Config:
-    def __init__(self, device: "JDDevice") -> None:
-        self.device = device
-        self.endpoint = "config"
-
-    def action(self, route: str, params: Optional[Any] = None) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
-    def get(self, interface_name: str, storage: Optional[str], key: str) -> Any:
+class Config(Action, endpoint="config"):
+    def get(self, interface_name: str, storage: str | None, key: str) -> Any:
         """Get value from interface by key.
 
         :param interface_name: The name of the JDownloader interface
@@ -30,8 +22,7 @@ class Config:
         """
 
         params = [interface_name, storage, key]
-        resp = self.action("/get", params)
-        return resp
+        return self.action("/get", params)
 
     def get_default(self, interface_name: str, storage: str, key: str) -> Any:
         """Get default value from interface by key.
@@ -49,8 +40,7 @@ class Config:
         """
 
         params = [interface_name, storage, key]
-        resp = self.action("/getDefault", params)
-        return resp
+        return self.action("/getDefault", params)
 
     def list(
         self,
@@ -59,7 +49,7 @@ class Config:
         returnValues: bool = True,
         returnDefaultValues: bool = True,
         returnEnumInfo: bool = True,
-    ) -> List[AdvancedConfigAPIEntry]:
+    ) -> list[AdvancedConfigAPIEntry]:
         """List all available config entries.
 
         :param pattern: A regex pattern to query by. If no pattern is given,
@@ -85,15 +75,9 @@ class Config:
             returnEnumInfo,
         ]
         resp = self.action("/list", params)
+        return [AdvancedConfigAPIEntry(**entry) for entry in resp]
 
-        config_api_entries = []
-        for entry in resp:
-            config_api_entry = AdvancedConfigAPIEntry(**entry)
-            config_api_entries.append(config_api_entry)
-
-        return config_api_entries
-
-    def list_enum(self, enum_type: str) -> List[EnumOption]:
+    def list_enum(self, enum_type: str) -> builtins.list[EnumOption]:
         """List all possible enum values for the type.
 
         The enum_type is the AdvancedConfigAPIEntry.config_type for an Enum.
@@ -107,17 +91,11 @@ class Config:
 
         params = [enum_type]
         resp = self.action("/listEnum", params)
-
-        enum_options = []
-        for entry in resp:
-            enum_option = EnumOption(**entry)
-            enum_options.append(enum_option)
-
-        return enum_options
+        return [EnumOption(**entry) for entry in resp]
 
     def query(
-        self, advanced_config_query: AdvancedConfigQuery = AdvancedConfigQuery.default()
-    ) -> List[AdvancedConfigAPIEntry]:
+        self, advanced_config_query: AdvancedConfigQuery | None = None
+    ) -> builtins.list[AdvancedConfigAPIEntry]:
         """Query config entries with an :class:`AdvancedConfigQuery`.
 
         :param advanced_config_query: The query options
@@ -126,15 +104,11 @@ class Config:
         :rtype: List[AdvancedConfigAPIEntry]
         """
 
+        query = advanced_config_query or AdvancedConfigQuery.default()
         params = [advanced_config_query.dict()]
         resp = self.action("/query", params=params)
 
-        config_api_entries = []
-        for entry in resp:
-            config_api_entry = AdvancedConfigAPIEntry(**entry)
-            config_api_entries.append(config_api_entry)
-
-        return config_api_entries
+        return [AdvancedConfigAPIEntry(**entry) for entry in resp]
 
     def reset(self, interface_name: str, storage: str, key: str) -> bool:
         """Reset a config entry.
@@ -152,8 +126,7 @@ class Config:
         """
 
         params = [interface_name, storage, key]
-        resp = self.action("/reset", params)
-        return resp
+        return self.action("/reset", params)
 
     def set(self, interface_name: str, storage: str, key: str, value: str) -> bool:
         """Set a config entry.
@@ -174,5 +147,4 @@ class Config:
         """
 
         params = [interface_name, storage, key, value]
-        resp = self.action("/set", params)
-        return resp
+        return self.action("/set", params)

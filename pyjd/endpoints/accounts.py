@@ -1,20 +1,10 @@
-from .jd_types import Account, AccountQuery, BasicAuth, BasicAuthType
-from typing import Optional, Any, Dict, List, TYPE_CHECKING
+from __future__ import annotations
 
-if TYPE_CHECKING:
-    from .jd_device import JDDevice
+from pyjd.endpoints import Action
+from pyjd.jd_types import Account, AccountQuery, BasicAuth, BasicAuthType
 
 
-class Accounts:
-    def __init__(self, device: "JDDevice"):
-
-        self.device = device
-        self.endpoint = "accountsV2"
-
-    def action(self, route: str, params: Optional[Any] = None) -> Any:
-        route = f"/{self.endpoint}{route}"
-        return self.device.connection_helper.action(route, params)
-
+class Accounts(Action, endpoint="accountsV2"):
     def add_account(self, premium_hoster: str, username: str, password: str) -> None:
         """Add a premium hoster account.
 
@@ -60,7 +50,7 @@ class Accounts:
         resp = self.action("/addBasicAuth", params)
         return resp
 
-    def disable_accounts(self, account_ids: List[int]) -> None:
+    def disable_accounts(self, account_ids: list[int]) -> None:
         """Disable premium hoster accounts.
 
         :param account_ids: A list of account uuids.
@@ -72,7 +62,7 @@ class Accounts:
         params = [account_ids]
         self.action("/disableAccounts", params)
 
-    def enable_accounts(self, account_ids: List[int]) -> None:
+    def enable_accounts(self, account_ids: list[int]) -> None:
         """Enable premium hoster accounts.
 
         :param account_ids: A list of account uuids.
@@ -94,12 +84,9 @@ class Accounts:
         """
 
         params = [hoster]
-        resp = self.action("/getPremiumHosterUrl", params)
-        return resp
+        return self.action("/getPremiumHosterUrl", params)
 
-    def list_accounts(
-        self, account_query: AccountQuery = AccountQuery.default()
-    ) -> List[Account]:
+    def list_accounts(self, account_query: AccountQuery | None = None) -> list[Account]:
         """List premium hoster accounts.
 
         :param params: An AccountQuery object.
@@ -108,6 +95,8 @@ class Accounts:
         :rtype: List[Account]
         """
 
+        if account_query is None:
+            account_query = AccountQuery.default()
         params = [account_query.dict()]
         resp = self.action("/listAccounts", params)
 
@@ -118,7 +107,7 @@ class Accounts:
 
         return accounts
 
-    def list_basic_auth(self) -> List[BasicAuth]:
+    def list_basic_auth(self) -> list[BasicAuth]:
         """List basic auth accounts.
 
         :return: A list of basic auth accounts.
@@ -134,7 +123,7 @@ class Accounts:
 
         return basic_auths
 
-    def list_premium_hoster(self) -> List[str]:
+    def list_premium_hoster(self) -> list[str]:
         """List known premium hosters.
 
         :return: A list of all known premium hosters.
@@ -144,7 +133,7 @@ class Accounts:
         resp = self.action("/listPremiumHoster")
         return resp
 
-    def list_premium_hoster_urls(self) -> Dict[str, str]:
+    def list_premium_hoster_urls(self) -> dict[str, str]:
         """List known premium hosters with urls.
 
         :return: A map of all known premium hosters to urls.
@@ -154,7 +143,7 @@ class Accounts:
         resp = self.action("/listPremiumHosterUrls")
         return resp
 
-    def refresh_accounts(self, account_ids: List[int]) -> None:
+    def refresh_accounts(self, account_ids: list[int]) -> None:
         """Let JDownloader refresh the account status for ``account_ids``.
 
         :param account_ids: A list of account ids
@@ -166,7 +155,7 @@ class Accounts:
         params = [account_ids]
         self.action("/refreshAccounts", params)
 
-    def remove_accounts(self, account_ids: List[int]) -> None:
+    def remove_accounts(self, account_ids: list[int]) -> None:
         """Remove the accounts for ``account_ids``.
 
         :param account_ids: A list of account ids
@@ -178,7 +167,7 @@ class Accounts:
         params = [account_ids]
         self.action("/removeAccounts", params)
 
-    def remove_basic_auths(self, basic_auth_ids: List[int]) -> bool:
+    def remove_basic_auths(self, basic_auth_ids: list[int]) -> bool:
         """Remove basic auths for ``basic_auth_ids``.
 
         :param basic_auth_ids: A list of basic auth ids.
@@ -191,9 +180,7 @@ class Accounts:
         resp = self.action("/removeBasicAuths", params)
         return resp
 
-    def set_username_and_password(
-        self, account_id: int, username: str, password: str
-    ) -> bool:
+    def set_username_and_password(self, account_id: int, username: str, password: str) -> bool:
         """Set a new username and password for a premium hoster account.
 
         :param account_id: The ID of the account.
