@@ -47,8 +47,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """
 
         params = [auth_type.value, hostmask, username, password]
-        resp = self.action("/addBasicAuth", params)
-        return resp
+        return self.action("/addBasicAuth", params)
 
     def disable_accounts(self, account_ids: list[int]) -> None:
         """Disable premium hoster accounts.
@@ -95,17 +94,10 @@ class Accounts(Action, endpoint="accountsV2"):
         :rtype: List[Account]
         """
 
-        if account_query is None:
-            account_query = AccountQuery.default()
-        params = [account_query.dict()]
+        account_query = account_query or AccountQuery.default()
+        params = [account_query.__json__()]
         resp = self.action("/listAccounts", params)
-
-        accounts = []
-        for acc in resp:
-            account = Account(**acc)
-            accounts.append(account)
-
-        return accounts
+        return [Account(**acc) for acc in resp]
 
     def list_basic_auth(self) -> list[BasicAuth]:
         """List basic auth accounts.
@@ -115,13 +107,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """
 
         resp = self.action("/listBasicAuth")
-
-        basic_auths = []
-        for auth in resp:
-            basic_auth = BasicAuth(**auth)
-            basic_auths.append(basic_auth)
-
-        return basic_auths
+        return [BasicAuth(**auth) for auth in resp]
 
     def list_premium_hoster(self) -> list[str]:
         """List known premium hosters.
@@ -130,8 +116,7 @@ class Accounts(Action, endpoint="accountsV2"):
         :rtype: List[str]
         """
 
-        resp = self.action("/listPremiumHoster")
-        return resp
+        return self.action("/listPremiumHoster")
 
     def list_premium_hoster_urls(self) -> dict[str, str]:
         """List known premium hosters with urls.
@@ -140,8 +125,7 @@ class Accounts(Action, endpoint="accountsV2"):
         :rtype: Dict[str, str]
         """
 
-        resp = self.action("/listPremiumHosterUrls")
-        return resp
+        return self.action("/listPremiumHosterUrls")
 
     def refresh_accounts(self, account_ids: list[int]) -> None:
         """Let JDownloader refresh the account status for ``account_ids``.
@@ -177,8 +161,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """
 
         params = [basic_auth_ids]
-        resp = self.action("/removeBasicAuths", params)
-        return resp
+        return self.action("/removeBasicAuths", params)
 
     def set_username_and_password(self, account_id: int, username: str, password: str) -> bool:
         """Set a new username and password for a premium hoster account.
@@ -194,8 +177,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """
 
         params = [account_id, username, password]
-        resp = self.action("/setUserNameAndPassword", params)
-        return resp
+        return self.action("/setUserNameAndPassword", params)
 
     def update_basic_auth(self, basic_authentication: BasicAuth) -> bool:
         """Update the credentials for a basic auth.
@@ -212,6 +194,5 @@ class Accounts(Action, endpoint="accountsV2"):
         :rtype: bool
         """
 
-        params = [basic_authentication.dict()]
-        resp = self.action("/updateBasicAuth", params)
-        return resp
+        params = [basic_authentication.__json__()]
+        return self.action("/updateBasicAuth", params)

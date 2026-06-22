@@ -206,7 +206,7 @@ class Downloads(Action, endpoint="downloadsV2"):
         """
 
         query_params = query_params or LinkQuery.default()
-        params = [query_params.dict()]
+        params = [query_params.__json__()]
         resp = self.action("/queryLinks", params)
         return [DownloadLink(**link) for link in resp]
 
@@ -219,7 +219,7 @@ class Downloads(Action, endpoint="downloadsV2"):
         :rtype: List[FilePackage]
         """
         query_params = query_params or PackageQuery.default()
-        params = [query_params.dict()]
+        params = [query_params.__json__()]
         resp = self.action("/queryPackages", params)
         return [FilePackage(**package) for package in resp]
 

@@ -4,16 +4,25 @@ These are the types and constants that are defined in JDownloader.
 For more information, see here:
     https://my.jdownloader.org/developers/index.html#tag_342
 """
+# ruff: noqa: N815
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any
+import dataclasses as py_dataclasses
+from enum import StrEnum
+from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field
+from pydantic import dataclasses
 
 
-class AbstractType(str, Enum):
+class _DictDataClass:
+    __dataclass_fields__: ClassVar[dict[str, py_dataclasses.Field[Any]]]
+
+    def __json__(self) -> dict[str, Any]:
+        return py_dataclasses.asdict(self)
+
+
+class AbstractType(StrEnum):
     """Abstract types that are used for config entries."""
 
     BOOLEAN = "BOOLEAN"
@@ -44,7 +53,7 @@ class AbstractType(str, Enum):
     ACTION = "ACTION"
 
 
-class DeleteAction(str, Enum):
+class DeleteAction(StrEnum):
     """Delete actions, that can be executed.
 
     This corresponds to the "Action" enum of JDownloader.
@@ -58,7 +67,7 @@ class DeleteAction(str, Enum):
     DELETE_MODE = "DELETE_MODE"
 
 
-class AvailableLinkState(str, Enum):
+class AvailableLinkState(StrEnum):
     """The availability of a link."""
 
     ONLINE = "ONLINE"
@@ -67,21 +76,21 @@ class AvailableLinkState(str, Enum):
     TEMP_UNKNOWN = "TEMP_UNKNOWN"
 
 
-class BasicAuthType(str, Enum):
+class BasicAuthType(StrEnum):
     """Types of basic auth protocols."""
 
     FTP = "FTP"
     HTTP = "HTTP"
 
 
-class Context(str, Enum):
+class Context(StrEnum):
     """Contextmenu selection."""
 
     LGC = "LGC"  # linkgrabber rightclick
     DLC = "DLC"  # downloadlist rightclick
 
 
-class MenuType(str, Enum):
+class MenuType(StrEnum):
     """Menu types"""
 
     CONTAINER = "CONTAINER"
@@ -89,7 +98,7 @@ class MenuType(str, Enum):
     LINK = "LINK"
 
 
-class Mode(str, Enum):
+class Mode(StrEnum):
     """Modes for package deletion."""
 
     REMOVE_LINKS_AND_DELETE_FILES = "REMOVE_LINKS_AND_DELETE_FILES"
@@ -97,7 +106,7 @@ class Mode(str, Enum):
     REMOVE_LINKS_ONLY = "REMOVE_LINKS_ONLY"
 
 
-class Priority(str, Enum):
+class Priority(StrEnum):
     """Download priority for packages."""
 
     HIGHEST = "HIGHEST"
@@ -109,7 +118,7 @@ class Priority(str, Enum):
     LOWEST = "LOWEST"
 
 
-class Reason(str, Enum):
+class Reason(StrEnum):
     """Reasons for exceptions."""
 
     CONNECTION_UNAVAILABLE = "CONNECTION_UNAVAILABLE"
@@ -125,7 +134,7 @@ class Reason(str, Enum):
     FFPROBE_MISSING = "FFPROBE_MISSING"
 
 
-class SelectionType(str, Enum):
+class SelectionType(StrEnum):
     """Types for selection"""
 
     SELECTED = "SELECTED"
@@ -134,7 +143,7 @@ class SelectionType(str, Enum):
     NONE = "NONE"
 
 
-class SkipRequest(str, Enum):
+class SkipRequest(StrEnum):
     """Captcha skip request"""
 
     SINGLE = "SINGLE"
@@ -146,7 +155,7 @@ class SkipRequest(str, Enum):
     TIMEOUT = "TIMEOUT"
 
 
-class Status(str, Enum):
+class Status(StrEnum):
     """Status"""
 
     NA = "NA"
@@ -159,7 +168,8 @@ class Status(str, Enum):
 #
 
 
-class Account(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class Account(_DictDataClass):
     """This is a premium hoster account
 
     Initializes itself from a query result (dict)
@@ -180,7 +190,8 @@ class Account(BaseModel):
         return f"<Account ({self.uuid})>"
 
 
-class AccountQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class AccountQuery(_DictDataClass):
     """Query for premium host accounts.
 
     The fields are booleans, that can be turned on or off, if you want to have
@@ -195,11 +206,11 @@ class AccountQuery(BaseModel):
     trafficLeft: bool = True
     trafficMax: bool = True
     userName: bool = True
-    uuidlist: list[int] | None
+    uuidlist: list[int] | None = None
     valid: bool = True
     validUntil: bool = True
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AccountQuery ({self.uuidlist})>"
 
     @staticmethod
@@ -218,7 +229,8 @@ class AccountQuery(BaseModel):
         )
 
 
-class AdvancedConfigAPIEntry(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class AdvancedConfigAPIEntry(_DictDataClass):
     abstractType: AbstractType | None
     defaultValue: Any | None
     docs: str | None
@@ -230,11 +242,12 @@ class AdvancedConfigAPIEntry(BaseModel):
     type: str | None
     value: Any | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AdvancedConfigAPIEntry ({self.key})>"
 
 
-class AdvancedConfigQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class AdvancedConfigQuery(_DictDataClass):
     configInterface: str | None
     defaultValues: bool
     description: bool
@@ -243,7 +256,7 @@ class AdvancedConfigQuery(BaseModel):
     pattern: str | None
     values: bool
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AdvancedConfigQuery ({self.configInterface})>"
 
     @staticmethod
@@ -259,7 +272,8 @@ class AdvancedConfigQuery(BaseModel):
         )
 
 
-class BasicAuth(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class BasicAuth(_DictDataClass):
     created: int | None
     enabled: bool | None
     hostmask: str | None
@@ -269,30 +283,32 @@ class BasicAuth(BaseModel):
     type: BasicAuthType | None
     username: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<BasicAuth ({self.id})>"
 
 
-class AddLinksQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class AddLinksQuery(_DictDataClass):
     assignJobID: bool | None
     autoExtract: bool | None
     autostart: bool | None
-    dataURLs: list[str] = []
     deepDecrypt: bool | None
     destinationFolder: str | None
     downloadPassword: str | None
     extractPassword: str | None
     links: str | None
+    sourceUrl: str | None
     overwritePackagizerRules: bool | None
     packageName: str | None
+    dataURLs: list[str] = []
     priority: Priority | None = Priority.DEFAULT
-    sourceUrl: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<AddLinksQuery ({self.packageName})>"
 
 
-class APIQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class APIQuery(_DictDataClass):
     """A standard api query.
 
     Most endpoint use a specialized version.
@@ -303,7 +319,7 @@ class APIQuery(BaseModel):
     maxResults: int
     startAt: int
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<APIQuery>"
 
     @staticmethod
@@ -311,7 +327,8 @@ class APIQuery(BaseModel):
         return APIQuery(empty=False, forNullKey="", maxResults=-1, startAt=0)
 
 
-class CaptchaJob(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class CaptchaJob(_DictDataClass):
     captchaCategory: str | None
     created: int | None
     explain: str | None
@@ -321,20 +338,22 @@ class CaptchaJob(BaseModel):
     timeout: int | None
     type: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<CaptchaJob ({self.id})>"
 
 
-class LinkVariant(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkVariant(_DictDataClass):
     iconKey: str | None
     id: str | None
     name: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<LinkVariant ({self.id})>"
 
 
-class CrawledLink(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class CrawledLink(_DictDataClass):
     availability: AvailableLinkState | None
     bytesTotal: int | None
     comment: str | None
@@ -349,11 +368,12 @@ class CrawledLink(BaseModel):
     variant: LinkVariant | None
     variants: bool | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<CrawledLink ({self.uuid})>"
 
 
-class CrawledLinkQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class CrawledLinkQuery(_DictDataClass):
     availability: bool | None
     bytesTotal: bool | None
     comment: bool | None
@@ -372,7 +392,7 @@ class CrawledLinkQuery(BaseModel):
     variantName: bool | None
     variants: bool | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<CrawledLinkQuery>"
 
     @staticmethod
@@ -398,7 +418,8 @@ class CrawledLinkQuery(BaseModel):
         )
 
 
-class CrawledPackage(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class CrawledPackage(_DictDataClass):
     bytesTotal: int | None
     childCount: int | None
     comment: str | None
@@ -414,11 +435,12 @@ class CrawledPackage(BaseModel):
     unknownCount: int | None
     uuid: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<CrawledPackage ({self.uuid})"
 
 
-class CrawledPackageQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class CrawledPackageQuery(_DictDataClass):
     availableOfflineCount: bool | None
     availableOnlineCount: bool | None
     availableTempUnknownCount: bool | None
@@ -435,7 +457,7 @@ class CrawledPackageQuery(BaseModel):
     startAt: int | None
     status: bool | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<CrawledPackageQuery>"
 
     @staticmethod
@@ -459,23 +481,26 @@ class CrawledPackageQuery(BaseModel):
         )
 
 
-class DialogInfo(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class DialogInfo(_DictDataClass):
     properties: dict[str, str] | None
     type: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<DialogInfo ({self.type})>"
 
 
-class DialogTypeInfo(BaseModel):
-    in_: dict[str, str] | None = Field(..., alias="in")
+@dataclasses.dataclass(slots=True, frozen=True)
+class DialogTypeInfo(_DictDataClass):
+    in_: dict[str, str] | None
     out: dict[str, str] | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<DialogTypeInfo>"
 
 
-class DownloadLink(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class DownloadLink(_DictDataClass):
     addedDate: int | None
     bytesLoaded: int | None
     bytesTotal: int | None
@@ -498,19 +523,21 @@ class DownloadLink(BaseModel):
     url: str | None
     uuid: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<DownloadLink ({self.uuid})>"
 
 
-class EnumOption(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class EnumOption(_DictDataClass):
     label: str | None
     name: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<EnumOption ({self.name})>"
 
 
-class Extension(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class Extension(_DictDataClass):
     configInterface: str | None
     description: str | None
     enabled: bool | None
@@ -519,11 +546,12 @@ class Extension(BaseModel):
     installed: bool | None
     name: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Extension ({self.id})>"
 
 
-class ExtensionQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class ExtensionQuery(_DictDataClass):
     configInterface: bool | None
     description: bool | None
     enabled: bool | None
@@ -532,7 +560,7 @@ class ExtensionQuery(BaseModel):
     name: bool | None
     pattern: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<ExtensionQuery>"
 
     @staticmethod
@@ -548,7 +576,8 @@ class ExtensionQuery(BaseModel):
         )
 
 
-class FilePackage(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class FilePackage(_DictDataClass):
     activeTask: str | None
     bytesLoaded: int | None
     bytesTotal: int | None
@@ -568,21 +597,23 @@ class FilePackage(BaseModel):
     statusIconKey: str | None
     uuid: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<FilePackage ({self.uuid})>"
 
 
-class IconDescriptor(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class IconDescriptor(_DictDataClass):
     cls: str | None
     key: str | None
     prps: Any | None
     rsc: list[IconDescriptor] | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<IconDescriptor ({self.key})>"
 
 
-class JobLinkCrawler(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class JobLinkCrawler(_DictDataClass):
     broken: int | None
     checking: bool | None
     crawled: int | None
@@ -592,11 +623,12 @@ class JobLinkCrawler(BaseModel):
     jobId: int | None
     unhandled: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<JobLinkCrawler ({self.crawledId})>"
 
 
-class LinkStatus(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkStatus(_DictDataClass):
     host: str | None
     linkCheckID: str | None
     name: str | None
@@ -604,30 +636,33 @@ class LinkStatus(BaseModel):
     status: AvailableLinkState | None
     url: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<LinkStatus ({self.linkCheckID})>"
 
 
-class LinkCheckResult(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkCheckResult(_DictDataClass):
     link: list[LinkStatus] | None
     status: Status | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<LinkCheckResult>"
 
 
-class LinkCollectingJob(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkCollectingJob(_DictDataClass):
     id: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<LinkCollectingJob ({self.id})>"
 
 
-class LinkCrawlerJobsQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkCrawlerJobsQuery(_DictDataClass):
     collectorInfo: bool | None
     jobIds: list[int] | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<LinkCrawlerJobsQuery>"
 
     @staticmethod
@@ -635,7 +670,8 @@ class LinkCrawlerJobsQuery(BaseModel):
         return LinkCrawlerJobsQuery(collectorInfo=True, jobIds=None)
 
 
-class LinkQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LinkQuery(_DictDataClass):
     addedDate: bool | None
     bytesLoaded: bool | None
     bytesTotal: bool | None
@@ -658,7 +694,7 @@ class LinkQuery(BaseModel):
     status: bool | None
     url: bool | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<LinkQuery>"
 
     @staticmethod
@@ -688,27 +724,30 @@ class LinkQuery(BaseModel):
         )
 
 
-class LogFolder(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class LogFolder(_DictDataClass):
     created: int | None
     current: bool | None
     lastModified: int | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<LogFolder>"
 
 
-class MenuStructure(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class MenuStructure(_DictDataClass):
     children: list[MenuStructure] | None
     icon: str | None
     id: str | None
     name: str | None
     type: MenuType | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<MenuStructure ({self.id})>"
 
 
-class PackageQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class PackageQuery(_DictDataClass):
     bytesLoaded: bool | None
     bytesTotal: bool | None
     childCount: bool | None
@@ -726,7 +765,7 @@ class PackageQuery(BaseModel):
     startAt: int | None
     status: bool | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<PackageQuery>"
 
     @staticmethod
@@ -751,7 +790,8 @@ class PackageQuery(BaseModel):
         )
 
 
-class Plugin(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class Plugin(_DictDataClass):
     abstractType: AbstractType | None
     className: str | None
     defaultValue: Any | None
@@ -767,15 +807,16 @@ class Plugin(BaseModel):
     value: Any | None
     version: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<Plugin ({self.className})>"
 
 
-class PluginsQuery(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class PluginsQuery(_DictDataClass):
     pattern: str | None
     version: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PluginsQuery ({self.pattern})>"
 
     @staticmethod
@@ -783,15 +824,17 @@ class PluginsQuery(BaseModel):
         return PluginsQuery(pattern="", version=None)
 
 
-class PublisherResponse(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class PublisherResponse(_DictDataClass):
     eventids: list[str] | None
     publisher: str | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<PublisherResponse ({self.publisher})>"
 
 
-class SubscriptionResponse(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class SubscriptionResponse(_DictDataClass):
     exclusions: list[str] | None
     maxKeepalive: int | None
     maxPolltimeout: int | None
@@ -799,16 +842,18 @@ class SubscriptionResponse(BaseModel):
     subscriptionid: int | None
     subscriptions: list[str] | None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<SubscriptionResponse ({self.subscriptionid})>"
 
 
-class IPandPort(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class IPandPort(_DictDataClass):
     port: int
     ip: str
 
 
-class DirectConnectionInfos(BaseModel):
+@dataclasses.dataclass(slots=True, frozen=True)
+class DirectConnectionInfos(_DictDataClass):
     infos: list[IPandPort] | None
     rebindProtectionDetected: bool | None
     mode: str | None

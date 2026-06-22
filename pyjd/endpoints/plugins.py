@@ -28,14 +28,14 @@ class Plugins(Action, endpoint="plugins"):
     def list(self, plugins_query=PluginsQuery.default()):
         """List plugins with query."""
 
-        params = [plugins_query.dict()]
+        params = [plugins_query.__json__()]
         resp = self.action("/list", params)
         return [Plugin(**p) for p in resp]
 
     def query(self, config_query=AdvancedConfigQuery.default()):
         """Query plugin configurations."""
 
-        params = [config_query.dict()]
+        params = [config_query.__json__()]
         resp = self.action("/query", params)
 
         return [AdvancedConfigAPIEntry(**c) for c in resp]

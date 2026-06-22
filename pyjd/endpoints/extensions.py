@@ -48,7 +48,7 @@ class Extensions(Action, endpoint="extensions"):
         :rtype: List[jd_types.Extension]
         """
 
-        params = [query.dict()]
+        params = [query.__json__()]
         resp = list(self.action("/list", params))
         return [Extension(**ext) for ext in resp]
 

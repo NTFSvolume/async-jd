@@ -52,7 +52,7 @@ class Dialogs(Action, endpoint="dialogs"):
 
         params = [type]
         resp = self.action("/getTypeInfo", params)
-        return DialogTypeInfo(**resp)
+        return DialogTypeInfo(in_=resp["in"], out=resp["out"])
 
     def list(self) -> list[int]:
         """List all open dialog ids.

@@ -53,7 +53,7 @@ class LinkGrabber(Action, endpoint="linkgrabberv2"):
         :rtype: LinkCollectingJob
         """
 
-        params = [add_links_query.dict()]
+        params = [add_links_query.__json__()]
         resp = self.action("/addLinks", params)
         return LinkCollectingJob(**resp)
 
@@ -230,7 +230,7 @@ class LinkGrabber(Action, endpoint="linkgrabberv2"):
         :rtype: List[jd_types.JobLinkCrawler]
         """
 
-        params = [link_crawler_jobs_query.dict()]
+        params = [link_crawler_jobs_query.__json__()]
         resp = self.action("/queryLinkCrawlerJobs", params)
 
         return [JobLinkCrawler(**job) for job in resp]
@@ -245,7 +245,7 @@ class LinkGrabber(Action, endpoint="linkgrabberv2"):
 
         """
 
-        params = [crawled_link_query.dict()]
+        params = [crawled_link_query.__json__()]
         resp = self.action("/queryLinks", params)
 
         return [CrawledLink(**link) for link in resp]
@@ -258,7 +258,7 @@ class LinkGrabber(Action, endpoint="linkgrabberv2"):
         :return: A list of crawled packages:
         """
 
-        params = [crawled_package_query.dict()]
+        params = [crawled_package_query.__json__()]
         resp = self.action("/queryPackages", params)
 
         return [CrawledPackage(**package) for package in resp]
