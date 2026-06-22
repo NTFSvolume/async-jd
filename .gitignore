@@ -4,3 +4,4 @@ dist/
 docs/_build
 pyjd.egg-info/
 venv/
+.coverage

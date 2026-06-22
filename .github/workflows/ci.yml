@@ -11,7 +11,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.0
         with:
           persist-credentials: false
 
@@ -30,11 +30,7 @@ jobs:
 
       - name: Start JDownloader
         timeout-minutes: 5
-        run: |
-          docker compose up -d jdownloader
-          until curl --fail --silent --show-error http://localhost:3128/device/ping; do
-            sleep 30
-          done
+        run: ./tests/docker/start_jdownloader.sh
 
       - name: Run tests
         timeout-minutes: 5
