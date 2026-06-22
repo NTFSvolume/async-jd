@@ -20,7 +20,7 @@ from pyjd.endpoints.update import Update
 from pyjd.myjd_connection_helper import MyJDConnectionHelper
 
 
-class DeviceDict(TypedDict):
+class DeviceDict(TypedDict, total=True):
     name: str
     id: str
     type: str
