@@ -1,3 +1,5 @@
+import dataclasses
+
 from pyjd.jd_device import JDDevice
 from pyjd.jd_types import AccountQuery, BasicAuthType
 
@@ -13,18 +15,18 @@ def test_add_basic_auth(jd: JDDevice) -> None:
 
 def test_disable_accounts(jd: JDDevice) -> None:
     a = jd.accounts.list_accounts()[0]
+    assert a.uuid
     jd.accounts.disable_accounts([a.uuid])
-
     a = jd.accounts.list_accounts(AccountQuery(uuidlist=[a.uuid]))
     assert not a[0].enabled
 
 
 def test_enable_accounts(jd: JDDevice) -> None:
     a = jd.accounts.list_accounts()[0]
+    assert a.uuid
     jd.accounts.enable_accounts([a.uuid])
-
     a = jd.accounts.list_accounts(AccountQuery(uuidlist=[a.uuid]))
-    assert a[0].enabled == True
+    assert a[0].enabled is True
 
 
 def test_get_premium_hoster_url(jd: JDDevice) -> None:
@@ -50,23 +52,25 @@ def test_list_premium_hoster_and_urls(jd: JDDevice) -> None:
     hosters = jd.accounts.list_premium_hoster()
     urls = jd.accounts.list_premium_hoster_urls()
 
-    assert type(hosters) == list
-    assert type(hosters[0]) == str
-    assert type(urls) == dict
+    assert type(hosters) is list
+    assert type(hosters[0]) is str
+    assert type(urls) is dict
 
     assert len(hosters) == len(urls.keys())
 
 
 def test_refresh_accounts(jd: JDDevice) -> None:
     accounts = jd.accounts.list_accounts()
-    ids = [a.uuid for a in accounts]
+    ids = [a.uuid for a in accounts if a.uuid]
+    assert ids
     jd.accounts.refresh_accounts(ids)
 
 
 def test_set_username_and_password(jd: JDDevice) -> None:
     a = jd.accounts.list_accounts()[0]
+    assert a.uuid
     res = jd.accounts.set_username_and_password(a.uuid, "test", "pass")
-    assert res == True
+    assert res is True
 
     a = jd.accounts.list_accounts(AccountQuery(uuidlist=[a.uuid]))
     assert a[0].username == "test"
@@ -74,10 +78,9 @@ def test_set_username_and_password(jd: JDDevice) -> None:
 
 def test_update_basic_auth(jd: JDDevice) -> None:
     b = jd.accounts.list_basic_auth()[0]
-    b.username = "test"
+    b = dataclasses.replace(b, username="test")
     res = jd.accounts.update_basic_auth(b)
-    assert res == True
-
+    assert res is True
     b = jd.accounts.list_basic_auth()[0]
     assert b.username == "test"
 
@@ -90,4 +93,5 @@ def test_remove_accounts(jd: JDDevice) -> None:
 
 def test_remove_basic_auths(jd: JDDevice) -> None:
     b = jd.accounts.list_basic_auth()[0]
+    assert b.id
     jd.accounts.remove_basic_auths([b.id])

@@ -1,3 +1,5 @@
+import dataclasses
+
 from pyjd.jd_device import JDDevice
 from pyjd.jd_types import AdvancedConfigQuery
 
@@ -29,15 +31,15 @@ def test_list(jd: JDDevice) -> None:
 
 def test_list_enum(jd: JDDevice) -> None:
     options = jd.config.list_enum("org.jdownloader.plugins.components.youtube.itag.VideoResolution")
-    assert type(options) == list
+    assert type(options) is list
     assert len(options) > 0
 
 
 def test_query(jd: JDDevice) -> None:
     query = AdvancedConfigQuery.default()
-    query.pattern = ".*youtube.*"
+    query = dataclasses.replace(query, pattern=".*youtube.*")
     res = jd.config.query(query)
-    assert type(res) == list
+    assert type(res) is list
     assert len(res) > 0
 
 

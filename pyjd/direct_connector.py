@@ -57,9 +57,10 @@ class DirectConnectionHelper:
     ) -> Any:
         """Make the request to the JDownloader"""
         assert http_action == "POST"
-        rurl = f"{self.device.connector.base_url}{path}"
-        rparams = "?" + "&".join(map(json.dumps, params))
-        content = _make_request(rurl + rparams, self.device.connector.headers).content
+        url = f"{self.device.connector.base_url}{path}"
+        if params:
+            url = f"{url}?" + "&".join(map(json.dumps, params))
+        content = _make_request(url, self.device.connector.headers).content
         if binary:
             return content
 

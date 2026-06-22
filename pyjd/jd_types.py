@@ -175,16 +175,17 @@ class Account(_DictDataClass):
     Initializes itself from a query result (dict)
     """
 
-    enabled: bool | None
-    errorString: str | None
-    errorType: str | None
-    hostname: str | None
-    trafficLeft: int | None
-    trafficMax: int | None
-    username: str | None
-    uuid: int | None
-    valid: bool | None
-    validUntil: int | None
+    errorString: str | None = None
+    errorType: str | None = None
+    hostname: str | None = None
+    trafficLeft: int | None = None
+    trafficMax: int | None = None
+    username: str | None = None
+    uuid: int | None = None
+
+    validUntil: int | None = None
+    valid: bool | None = None
+    enabled: bool | None = None
 
     def __repr__(self) -> str:
         return f"<Account ({self.uuid})>"
@@ -231,16 +232,16 @@ class AccountQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class AdvancedConfigAPIEntry(_DictDataClass):
-    abstractType: AbstractType | None
-    defaultValue: Any | None
-    docs: str | None
-    enumLabel: str | None
-    enumOptions: Any | None
-    interfaceName: str | None
-    key: str | None
-    storage: str | None
-    type: str | None
-    value: Any | None
+    abstractType: AbstractType | None = None
+    defaultValue: Any | None = None
+    docs: str | None = None
+    enumLabel: str | None = None
+    enumOptions: Any | None = None
+    interfaceName: str | None = None
+    key: str | None = None
+    storage: str | None = None
+    type: str | None = None
+    value: Any | None = None
 
     def __repr__(self) -> str:
         return f"<AdvancedConfigAPIEntry ({self.key})>"
@@ -248,13 +249,13 @@ class AdvancedConfigAPIEntry(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class AdvancedConfigQuery(_DictDataClass):
-    configInterface: str | None
     defaultValues: bool
     description: bool
     enumInfo: bool
     includeExtensions: bool
-    pattern: str | None
     values: bool
+    configInterface: str | None = None
+    pattern: str | None = None
 
     def __repr__(self) -> str:
         return f"<AdvancedConfigQuery ({self.configInterface})>"
@@ -274,14 +275,14 @@ class AdvancedConfigQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class BasicAuth(_DictDataClass):
-    created: int | None
-    enabled: bool | None
-    hostmask: str | None
-    id: int | None
-    lastValidated: int | None
-    password: str | None
-    type: BasicAuthType | None
-    username: str | None
+    created: int | None = None
+    enabled: bool | None = None
+    hostmask: str | None = None
+    id: int | None = None
+    lastValidated: int | None = None
+    password: str | None = None
+    type: BasicAuthType | None = None
+    username: str | None = None
 
     def __repr__(self) -> str:
         return f"<BasicAuth ({self.id})>"
@@ -289,17 +290,17 @@ class BasicAuth(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class AddLinksQuery(_DictDataClass):
-    assignJobID: bool | None
-    autoExtract: bool | None
-    autostart: bool | None
-    deepDecrypt: bool | None
-    destinationFolder: str | None
-    downloadPassword: str | None
-    extractPassword: str | None
-    links: str | None
-    sourceUrl: str | None
-    overwritePackagizerRules: bool | None
-    packageName: str | None
+    assignJobID: bool | None = None
+    autoExtract: bool | None = None
+    autostart: bool | None = None
+    deepDecrypt: bool | None = None
+    destinationFolder: str | None = None
+    downloadPassword: str | None = None
+    extractPassword: str | None = None
+    links: str | None = None
+    sourceUrl: str | None = None
+    overwritePackagizerRules: bool | None = None
+    packageName: str | None = None
     dataURLs: list[str] = py_dataclasses.field(default_factory=list)
     priority: Priority | None = Priority.DEFAULT
 
@@ -315,9 +316,9 @@ class APIQuery(_DictDataClass):
     """
 
     empty: bool
-    forNullKey: str | None
     maxResults: int
     startAt: int
+    forNullKey: str | None = None
 
     def __repr__(self) -> str:
         return "<APIQuery>"
@@ -329,14 +330,14 @@ class APIQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class CaptchaJob(_DictDataClass):
-    captchaCategory: str | None
-    created: int | None
-    explain: str | None
-    hoster: str | None
-    id: int | None
-    link: int | None
-    timeout: int | None
-    type: str | None
+    captchaCategory: str | None = None
+    created: int | None = None
+    explain: str | None = None
+    hoster: str | None = None
+    id: int | None = None
+    link: int | None = None
+    timeout: int | None = None
+    type: str | None = None
 
     def __repr__(self) -> str:
         return f"<CaptchaJob ({self.id})>"
@@ -344,9 +345,9 @@ class CaptchaJob(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LinkVariant(_DictDataClass):
-    iconKey: str | None
-    id: str | None
-    name: str | None
+    iconKey: str | None = None
+    id: str | None = None
+    name: str | None = None
 
     def __repr__(self) -> str:
         return f"<LinkVariant ({self.id})>"
@@ -355,18 +356,18 @@ class LinkVariant(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class CrawledLink(_DictDataClass):
     availability: AvailableLinkState | None
-    bytesTotal: int | None
-    comment: str | None
-    downloadPassword: str | None
-    enabled: bool | None
-    host: str | None
-    name: str | None
-    packageUUID: int | None
-    priority: Priority | None
-    url: str | None
-    uuid: int | None
-    variant: LinkVariant | None
-    variants: bool | None
+    bytesTotal: int | None = None
+    comment: str | None = None
+    downloadPassword: str | None = None
+    enabled: bool | None = None
+    host: str | None = None
+    name: str | None = None
+    packageUUID: int | None = None
+    priority: Priority | None = None
+    url: str | None = None
+    uuid: int | None = None
+    variant: LinkVariant | None = None
+    variants: bool | None = None
 
     def __repr__(self) -> str:
         return f"<CrawledLink ({self.uuid})>"
@@ -374,23 +375,23 @@ class CrawledLink(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class CrawledLinkQuery(_DictDataClass):
-    availability: bool | None
-    bytesTotal: bool | None
-    comment: bool | None
-    enabled: bool | None
-    host: bool | None
-    jobUUIDs: list[int] | None
-    maxResults: int | None
-    packageUUIDs: list[int] | None
-    password: bool | None
-    priority: bool | None
-    startAt: int | None
-    status: bool | None
-    url: bool | None
-    variantID: bool | None
-    variantIcon: bool | None
-    variantName: bool | None
-    variants: bool | None
+    availability: bool | None = None
+    bytesTotal: bool | None = None
+    comment: bool | None = None
+    enabled: bool | None = None
+    host: bool | None = None
+    jobUUIDs: list[int] | None = None
+    maxResults: int | None = None
+    packageUUIDs: list[int] | None = None
+    password: bool | None = None
+    priority: bool | None = None
+    startAt: int | None = None
+    status: bool | None = None
+    url: bool | None = None
+    variantID: bool | None = None
+    variantIcon: bool | None = None
+    variantName: bool | None = None
+    variants: bool | None = None
 
     def __repr__(self) -> str:
         return "<CrawledLinkQuery>"
@@ -420,20 +421,20 @@ class CrawledLinkQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class CrawledPackage(_DictDataClass):
-    bytesTotal: int | None
-    childCount: int | None
-    comment: str | None
-    downloadPassword: str | None
-    enabled: bool | None
-    hosts: list[str] | None
-    name: str | None
-    offlineCount: int | None
-    onlineCount: int | None
-    priority: Priority | None
-    saveTo: str | None
-    tempUnknownCount: int | None
-    unknownCount: int | None
-    uuid: int | None
+    bytesTotal: int | None = None
+    childCount: int | None = None
+    comment: str | None = None
+    downloadPassword: str | None = None
+    enabled: bool | None = None
+    hosts: list[str] | None = None
+    name: str | None = None
+    offlineCount: int | None = None
+    onlineCount: int | None = None
+    priority: Priority | None = None
+    saveTo: str | None = None
+    tempUnknownCount: int | None = None
+    unknownCount: int | None = None
+    uuid: int | None = None
 
     def __repr__(self) -> str:
         return f"<CrawledPackage ({self.uuid})"
@@ -441,21 +442,21 @@ class CrawledPackage(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class CrawledPackageQuery(_DictDataClass):
-    availableOfflineCount: bool | None
-    availableOnlineCount: bool | None
-    availableTempUnknownCount: bool | None
-    availableUnknownCount: bool | None
-    bytesTotal: bool | None
-    childCount: bool | None
-    comment: bool | None
-    enabled: bool | None
-    hosts: bool | None
-    maxResults: int | None
-    packageUUIDs: list[int] | None
-    priority: bool | None
-    saveTo: bool | None
-    startAt: int | None
-    status: bool | None
+    availableOfflineCount: bool | None = None
+    availableOnlineCount: bool | None = None
+    availableTempUnknownCount: bool | None = None
+    availableUnknownCount: bool | None = None
+    bytesTotal: bool | None = None
+    childCount: bool | None = None
+    comment: bool | None = None
+    enabled: bool | None = None
+    hosts: bool | None = None
+    maxResults: int | None = None
+    packageUUIDs: list[int] | None = None
+    priority: bool | None = None
+    saveTo: bool | None = None
+    startAt: int | None = None
+    status: bool | None = None
 
     def __repr__(self) -> str:
         return "<CrawledPackageQuery>"
@@ -484,7 +485,7 @@ class CrawledPackageQuery(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class DialogInfo(_DictDataClass):
     properties: dict[str, str] | None
-    type: str | None
+    type: str | None = None
 
     def __repr__(self) -> str:
         return f"<DialogInfo ({self.type})>"
@@ -501,27 +502,27 @@ class DialogTypeInfo(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class DownloadLink(_DictDataClass):
-    addedDate: int | None
-    bytesLoaded: int | None
-    bytesTotal: int | None
-    comment: str | None
-    downloadPassword: str | None
-    enabled: bool | None
-    eta: int | None
-    extractionStatus: str | None
-    finished: bool | None
-    finishedDate: int | None
-    host: str | None
-    name: str | None
-    packageUUID: int | None
-    priority: Priority | None
-    running: int | None
-    skipped: int | None
-    speed: int | None
-    status: str | None
-    statusIconKey: str | None
-    url: str | None
-    uuid: int | None
+    addedDate: int | None = None
+    bytesLoaded: int | None = None
+    bytesTotal: int | None = None
+    comment: str | None = None
+    downloadPassword: str | None = None
+    enabled: bool | None = None
+    eta: int | None = None
+    extractionStatus: str | None = None
+    finished: bool | None = None
+    finishedDate: int | None = None
+    host: str | None = None
+    name: str | None = None
+    packageUUID: int | None = None
+    priority: Priority | None = None
+    running: int | None = None
+    skipped: int | None = None
+    speed: int | None = None
+    status: str | None = None
+    statusIconKey: str | None = None
+    url: str | None = None
+    uuid: int | None = None
 
     def __repr__(self) -> str:
         return f"<DownloadLink ({self.uuid})>"
@@ -529,8 +530,8 @@ class DownloadLink(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class EnumOption(_DictDataClass):
-    label: str | None
-    name: str | None
+    label: str | None = None
+    name: str | None = None
 
     def __repr__(self) -> str:
         return f"<EnumOption ({self.name})>"
@@ -538,13 +539,13 @@ class EnumOption(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class Extension(_DictDataClass):
-    configInterface: str | None
-    description: str | None
-    enabled: bool | None
-    iconKey: str | None
-    id: str | None
-    installed: bool | None
-    name: str | None
+    configInterface: str | None = None
+    description: str | None = None
+    enabled: bool | None = None
+    iconKey: str | None = None
+    id: str | None = None
+    installed: bool | None = None
+    name: str | None = None
 
     def __repr__(self) -> str:
         return f"<Extension ({self.id})>"
@@ -552,13 +553,13 @@ class Extension(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class ExtensionQuery(_DictDataClass):
-    configInterface: bool | None
-    description: bool | None
-    enabled: bool | None
-    iconKey: bool | None
-    installed: bool | None
-    name: bool | None
-    pattern: str | None
+    configInterface: bool | None = None
+    description: bool | None = None
+    enabled: bool | None = None
+    iconKey: bool | None = None
+    installed: bool | None = None
+    name: bool | None = None
+    pattern: str | None = None
 
     def __repr__(self) -> str:
         return "<ExtensionQuery>"
@@ -578,24 +579,24 @@ class ExtensionQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class FilePackage(_DictDataClass):
-    activeTask: str | None
-    bytesLoaded: int | None
-    bytesTotal: int | None
-    childCount: int | None
-    comment: str | None
-    downloadPassword: str | None
-    enabled: bool | None
-    eta: int | None
-    finished: bool | None
-    hosts: list[str] | None
-    name: str | None
-    priority: Priority | None
-    running: bool | None
-    saveTo: str | None
-    speed: int | None
-    status: str | None
-    statusIconKey: str | None
-    uuid: int | None
+    activeTask: str | None = None
+    bytesLoaded: int | None = None
+    bytesTotal: int | None = None
+    childCount: int | None = None
+    comment: str | None = None
+    downloadPassword: str | None = None
+    enabled: bool | None = None
+    eta: int | None = None
+    finished: bool | None = None
+    hosts: list[str] | None = None
+    name: str | None = None
+    priority: Priority | None = None
+    running: bool | None = None
+    saveTo: str | None = None
+    speed: int | None = None
+    status: str | None = None
+    statusIconKey: str | None = None
+    uuid: int | None = None
 
     def __repr__(self) -> str:
         return f"<FilePackage ({self.uuid})>"
@@ -603,10 +604,10 @@ class FilePackage(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class IconDescriptor(_DictDataClass):
-    cls: str | None
-    key: str | None
-    prps: Any | None
-    rsc: list[IconDescriptor] | None
+    cls: str | None = None
+    key: str | None = None
+    prps: Any | None = None
+    rsc: list[IconDescriptor] | None = None
 
     def __repr__(self) -> str:
         return f"<IconDescriptor ({self.key})>"
@@ -614,14 +615,14 @@ class IconDescriptor(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class JobLinkCrawler(_DictDataClass):
-    broken: int | None
-    checking: bool | None
-    crawled: int | None
-    crawledId: int | None
-    crawling: bool | None
-    filtered: int | None
-    jobId: int | None
-    unhandled: int | None
+    broken: int | None = None
+    checking: bool | None = None
+    crawled: int | None = None
+    crawledId: int | None = None
+    crawling: bool | None = None
+    filtered: int | None = None
+    jobId: int | None = None
+    unhandled: int | None = None
 
     def __repr__(self) -> str:
         return f"<JobLinkCrawler ({self.crawledId})>"
@@ -629,12 +630,12 @@ class JobLinkCrawler(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LinkStatus(_DictDataClass):
-    host: str | None
-    linkCheckID: str | None
-    name: str | None
-    size: int | None
-    status: AvailableLinkState | None
-    url: str | None
+    host: str | None = None
+    linkCheckID: str | None = None
+    name: str | None = None
+    size: int | None = None
+    status: AvailableLinkState | None = None
+    url: str | None = None
 
     def __repr__(self) -> str:
         return f"<LinkStatus ({self.linkCheckID})>"
@@ -651,7 +652,7 @@ class LinkCheckResult(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LinkCollectingJob(_DictDataClass):
-    id: int | None
+    id: int | None = None
 
     def __repr__(self) -> str:
         return f"<LinkCollectingJob ({self.id})>"
@@ -659,8 +660,8 @@ class LinkCollectingJob(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LinkCrawlerJobsQuery(_DictDataClass):
-    collectorInfo: bool | None
-    jobIds: list[int] | None
+    collectorInfo: bool | None = None
+    jobIds: list[int] | None = None
 
     def __repr__(self) -> str:
         return "<LinkCrawlerJobsQuery>"
@@ -672,27 +673,27 @@ class LinkCrawlerJobsQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LinkQuery(_DictDataClass):
-    addedDate: bool | None
-    bytesLoaded: bool | None
-    bytesTotal: bool | None
-    comment: bool | None
-    enabled: bool | None
-    eta: bool | None
-    extractionStatus: bool | None
-    finished: bool | None
-    finishedDate: bool | None
-    host: bool | None
-    jobUUIDs: list[int] | None
-    maxResults: int | None
-    packageUUIDs: list[int] | None
-    password: bool | None
-    priority: bool | None
-    running: bool | None
-    skipped: bool | None
-    speed: bool | None
-    startAt: int | None
-    status: bool | None
-    url: bool | None
+    addedDate: bool | None = None
+    bytesLoaded: bool | None = None
+    bytesTotal: bool | None = None
+    comment: bool | None = None
+    enabled: bool | None = None
+    eta: bool | None = None
+    extractionStatus: bool | None = None
+    finished: bool | None = None
+    finishedDate: bool | None = None
+    host: bool | None = None
+    jobUUIDs: list[int] | None = None
+    maxResults: int | None = None
+    packageUUIDs: list[int] | None = None
+    password: bool | None = None
+    priority: bool | None = None
+    running: bool | None = None
+    skipped: bool | None = None
+    speed: bool | None = None
+    startAt: int | None = None
+    status: bool | None = None
+    url: bool | None = None
 
     def __repr__(self) -> str:
         return "<LinkQuery>"
@@ -726,9 +727,9 @@ class LinkQuery(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class LogFolder(_DictDataClass):
-    created: int | None
-    current: bool | None
-    lastModified: int | None
+    created: int | None = None
+    current: bool | None = None
+    lastModified: int | None = None
 
     def __repr__(self) -> str:
         return "<LogFolder>"
@@ -737,10 +738,10 @@ class LogFolder(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class MenuStructure(_DictDataClass):
     children: list[MenuStructure] | None
-    icon: str | None
-    id: str | None
-    name: str | None
-    type: MenuType | None
+    icon: str | None = None
+    id: str | None = None
+    name: str | None = None
+    type: MenuType | None = None
 
     def __repr__(self) -> str:
         return f"<MenuStructure ({self.id})>"
@@ -748,22 +749,22 @@ class MenuStructure(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class PackageQuery(_DictDataClass):
-    bytesLoaded: bool | None
-    bytesTotal: bool | None
-    childCount: bool | None
-    comment: bool | None
-    enabled: bool | None
-    eta: bool | None
-    finished: bool | None
-    hosts: bool | None
-    maxResults: int | None
-    packageUUIDs: list[int] | None
-    priority: bool | None
-    running: bool | None
-    saveTo: bool | None
-    speed: bool | None
-    startAt: int | None
-    status: bool | None
+    bytesLoaded: bool | None = None
+    bytesTotal: bool | None = None
+    childCount: bool | None = None
+    comment: bool | None = None
+    enabled: bool | None = None
+    eta: bool | None = None
+    finished: bool | None = None
+    hosts: bool | None = None
+    maxResults: int | None = None
+    packageUUIDs: list[int] | None = None
+    priority: bool | None = None
+    running: bool | None = None
+    saveTo: bool | None = None
+    speed: bool | None = None
+    startAt: int | None = None
+    status: bool | None = None
 
     def __repr__(self) -> str:
         return "<PackageQuery>"
@@ -793,19 +794,19 @@ class PackageQuery(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class Plugin(_DictDataClass):
     abstractType: AbstractType | None
-    className: str | None
-    defaultValue: Any | None
-    displayName: str | None
-    docs: str | None
-    enumLabel: str | None
-    enumOptions: Any | None
-    interfaceName: str | None
-    key: str | None
-    pattern: str | None
-    storage: str | None
-    type: str | None
-    value: Any | None
-    version: str | None
+    className: str | None = None
+    defaultValue: Any | None = None
+    displayName: str | None = None
+    docs: str | None = None
+    enumLabel: str | None = None
+    enumOptions: Any | None = None
+    interfaceName: str | None = None
+    key: str | None = None
+    pattern: str | None = None
+    storage: str | None = None
+    type: str | None = None
+    value: Any | None = None
+    version: str | None = None
 
     def __repr__(self) -> str:
         return f"<Plugin ({self.className})>"
@@ -813,8 +814,8 @@ class Plugin(_DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class PluginsQuery(_DictDataClass):
-    pattern: str | None
-    version: str | None
+    pattern: str | None = None
+    version: str | None = None
 
     def __repr__(self) -> str:
         return f"<PluginsQuery ({self.pattern})>"
@@ -827,7 +828,7 @@ class PluginsQuery(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class PublisherResponse(_DictDataClass):
     eventids: list[str] | None
-    publisher: str | None
+    publisher: str | None = None
 
     def __repr__(self) -> str:
         return f"<PublisherResponse ({self.publisher})>"
@@ -836,11 +837,11 @@ class PublisherResponse(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class SubscriptionResponse(_DictDataClass):
     exclusions: list[str] | None
-    maxKeepalive: int | None
-    maxPolltimeout: int | None
-    subscribed: bool | None
-    subscriptionid: int | None
-    subscriptions: list[str] | None
+    maxKeepalive: int | None = None
+    maxPolltimeout: int | None = None
+    subscribed: bool | None = None
+    subscriptionid: int | None = None
+    subscriptions: list[str] | None = None
 
     def __repr__(self) -> str:
         return f"<SubscriptionResponse ({self.subscriptionid})>"
@@ -855,5 +856,5 @@ class IPandPort(_DictDataClass):
 @dataclasses.dataclass(slots=True, frozen=True)
 class DirectConnectionInfos(_DictDataClass):
     infos: list[IPandPort] | None
-    rebindProtectionDetected: bool | None
-    mode: str | None
+    rebindProtectionDetected: bool | None = None
+    mode: str | None = None

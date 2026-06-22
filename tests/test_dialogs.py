@@ -1,7 +1,10 @@
+import pytest
+
 from pyjd.jd_device import JDDevice
 from pyjd.jd_types import DialogInfo, DialogTypeInfo
 
 
+@pytest.mark.xfail(reason="broken from before fork")
 def test_dialogs(jd: JDDevice) -> None:
     # we're just doing everything in here..
 

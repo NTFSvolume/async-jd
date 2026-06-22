@@ -12,4 +12,4 @@ def test_get_session_public_key(jd: JDDevice) -> None:
 
 
 def test_ping(jd: JDDevice) -> None:
-    assert jd.device.ping() == True
+    assert jd.device.ping() is True
