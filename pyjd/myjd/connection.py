@@ -19,7 +19,7 @@ type CoolDown = float
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
-class _DirectConnection:
+class Address:
     ip: str
     port: int
 
@@ -27,23 +27,21 @@ class _DirectConnection:
 @dataclasses.dataclass(slots=True)
 class _DirectConnectionContext:
     enabled: bool = True
-    info: dict[_DirectConnection, CoolDown] = dataclasses.field(default_factory=dict)
+    info: dict[Address, CoolDown] = dataclasses.field(default_factory=dict)
     min_cooldown: int = 0
     consecutive_errors: int = 0
-
-    @property
-    def should_use(self) -> bool:
-        return self.enabled and bool(self.info) and not self.is_cooling_down
 
     @property
     def is_cooling_down(self) -> bool:
         return time.time() < self.min_cooldown
 
-    def refresh(self, valid_connections: set[_DirectConnection]) -> None:
-        info = dict.fromkeys(valid_connections.difference(self.info), 0)
+    def refresh(self, valid_addresses: set[Address]) -> None:
+        info = dict.fromkeys(valid_addresses.difference(self.info), 0)
         # put pre-existing connections last to give them priority
         info |= {
-            conn: cooldown for conn, cooldown in self.info.items() if conn in valid_connections
+            address: cooldown
+            for address, cooldown in self.info.items()
+            if address in valid_addresses
         }
         self.info = info
 
@@ -78,12 +76,12 @@ class MyJDConnection(Connection):
         )
 
         try:
-            connections: list[dict[str, Any]] = response["data"]["infos"]
+            addresses: list[dict[str, Any]] = response["data"]["infos"]
         except LookupError:
             return
 
-        if len(connections) > 0:
-            self._direct_ctx.refresh({_DirectConnection(**info) for info in connections})
+        if len(addresses) > 0:
+            self._direct_ctx.refresh({Address(**address) for address in addresses})
 
     def enable_direct_connection(self) -> None:
         self._direct_ctx.enabled = True
@@ -92,6 +90,13 @@ class MyJDConnection(Connection):
     def disable_direct_connect(self) -> None:
         self._direct_ctx.enabled = False
         self._direct_ctx.info.clear()
+
+    def __try_direct_connect(self) -> bool:
+        return (
+            self._direct_ctx.enabled
+            and bool(self._direct_ctx.info)
+            and not self._direct_ctx.is_cooling_down
+        )
 
     def action(
         self,
@@ -102,12 +107,12 @@ class MyJDConnection(Connection):
         binary: bool = False,
     ) -> dict[str, Any] | None:
 
-        if not self._direct_ctx.should_use:
+        if not self.__try_direct_connect():
             return self._myjd_request(path, params, http_action, binary=binary)
 
         action_url = self.__action_url()
         now = time.time()
-        for connection, cooldown in reversed(self._direct_ctx.info.items()):
+        for address, cooldown in reversed(self._direct_ctx.info.items()):
             if now < cooldown:
                 continue
 
@@ -116,16 +121,16 @@ class MyJDConnection(Connection):
                 http_action,
                 params,
                 action_url,
-                api=f"http://{connection.ip}:{connection.port}",
+                api=f"http://{address.ip}:{address.port}",
                 binary=binary,
             )
             if response is None:
-                self._direct_ctx.info[connection] = now + 60
+                self._direct_ctx.info[address] = now + 60
                 continue
 
             # This connection worked, remove and re add it to give it priority on the next request
-            cooldown = self._direct_ctx.info.pop(connection)
-            self._direct_ctx.info[connection] = cooldown
+            cooldown = self._direct_ctx.info.pop(address)
+            self._direct_ctx.info[address] = cooldown
             self._direct_ctx.consecutive_errors = 0
             if binary:
                 return response
