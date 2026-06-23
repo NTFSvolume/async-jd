@@ -66,7 +66,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """List premium hoster accounts."""
 
         account_query = account_query or AccountQuery()
-        params = account_query.__json__().items()
+        params = [account_query.__json__()]
         resp = self.action("/listAccounts", params)
         return [Account(**acc) for acc in resp]
 

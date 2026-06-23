@@ -164,27 +164,17 @@ class Downloads(Action, endpoint="downloadsV2"):
 
     def move_to_new_package(
         self,
-        link_ids: list[int] = [],
-        pkg_ids: list[int] = [],
-        new_pkg_name: str = "",
-        download_path: str = "",
+        linkIds: list[int] = [],
+        pkgIds: list[int] = [],
+        newPkgName: str = "",
+        downloadPath: str = "",
     ) -> Any:
-        """Move link_ids and pkg_ids to a new package
+        """Move link_ids and pkg_ids to a new package"""
 
-        :param link_ids: Link IDs that are used
-        :type link_ids: List[int]
-        :param package_ids: Package IDs that are used
-        :type package_ids: List[int]
-        :param new_pkg_name: Name of the new package
-        :type new_pkg_name: str
-        :param download_path: Download path for the new package
-        :type download_path: str
-        :returns: resp
-        :rtype: Any
-        """
-
-        params = [link_ids, pkg_ids, new_pkg_name, download_path]
-        return self.action("/movetoNewPackage", params)
+        # params = [link_ids, pkg_ids, new_pkg_name, download_path]
+        params = locals()
+        params.pop("self")
+        return self.action("/movetoNewPackage", [params])
 
     def package_count(self) -> int:
         """Get the number of packages in the download list.

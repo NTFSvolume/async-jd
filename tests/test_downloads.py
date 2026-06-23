@@ -79,7 +79,7 @@ def test_set_download_directory(jd: JDDeviceClient) -> None:
 
 
 def test_set_download_password(jd: JDDeviceClient) -> None:
-    jd.downloads.set_download_password()
+    jd.downloads.set_download_password([1], [2], "pass")
 
 
 def test_set_enabled(jd: JDDeviceClient) -> None:

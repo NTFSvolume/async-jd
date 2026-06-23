@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import dataclasses
 import logging
-from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 import requests
@@ -16,7 +15,7 @@ if TYPE_CHECKING:
 
 _MISSING = object()
 
-type Params = Collection[tuple[str, Any] | str | int | list[int] | list[str]]
+type Params = list[Any]
 
 
 class DictDataClass:
@@ -52,4 +51,4 @@ def make_request(
     timeout: int = 60,
 ) -> requests.Response:
     logger.debug(f"Request to {url}")
-    return requests.get(url, headers=headers, timeout=timeout, data=data)
+    return requests.post(url, headers=headers, timeout=timeout, data=data)

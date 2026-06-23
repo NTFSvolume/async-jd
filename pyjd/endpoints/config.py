@@ -65,7 +65,7 @@ class Config(Action, endpoint="config"):
         """
 
         query = query or ListConfigQuery()
-        resp = self.action("/list", query.__json__())
+        resp = self.action("/list", list(dict(query).values()))
         return [AdvancedConfigAPIEntry(**entry) for entry in resp]
 
     def list_enum(self, enum_type: str) -> builtins.list[EnumOption]:
