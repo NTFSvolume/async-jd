@@ -18,14 +18,14 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-type CoolDown = float
+type Cooldown = float
 
 
 @dataclasses.dataclass(slots=True)
 class DirectConnections:
     _enabled: bool = True
-    _address_map: dict[Address, CoolDown] = dataclasses.field(default_factory=dict)
-    min_cooldown: int = 0
+    _address_map: dict[Address, Cooldown] = dataclasses.field(default_factory=dict)
+    cooldown: int = 0
     consecutive_errors: int = 0
 
     @property
@@ -37,22 +37,22 @@ class DirectConnections:
         self._enabled = False
         self._address_map.clear()
 
-    def __getitem__(self, address: Address) -> CoolDown:
+    def __getitem__(self, address: Address) -> Cooldown:
         return self._address_map[address]
 
-    def __setitem__(self, address: Address, cooldown: CoolDown) -> None:
+    def __setitem__(self, address: Address, cooldown: Cooldown) -> None:
         self._address_map[address] = cooldown
 
-    def __iter__(self) -> Generator[tuple[Address, CoolDown]]:
+    def __iter__(self) -> Generator[tuple[Address, Cooldown]]:
         yield from reversed(tuple(self._address_map.items()))
 
     def __bool__(self) -> bool:
-        return self._enabled and bool(self._address_map) and time.time() > self.min_cooldown
+        return self._enabled and bool(self._address_map) and time.time() > self.cooldown
 
     def push(self, address: Address) -> None:
         self._address_map[address] = self._address_map.pop(address, 0)
 
-    def update(self, valid_addresses: set[Address]) -> None:
+    def refresh(self, valid_addresses: set[Address]) -> None:
         unavaiable = self._address_map.keys() - valid_addresses
         new = valid_addresses - self._address_map.keys()
         for address in unavaiable:
@@ -64,25 +64,20 @@ class DirectConnections:
 
     def register_error(self) -> None:
         self.consecutive_errors += 1
-        self.min_cooldown = int(time.time() + (60 * self.consecutive_errors))
+        self.cooldown = int(time.time() + (60 * self.consecutive_errors))
 
 
+@dataclasses.dataclass(slots=True)
 class MyJDConnection:
-    def __init__(
-        self,
-        api: MyJDAPI,
-        device: JDDevice,
-    ) -> None:
-        self.api: MyJDAPI = api
-        self.device: JDDevice = device
-        self._direct_connections: DirectConnections = DirectConnections()
-        self._ready: bool = False
+    api: MyJDAPI
+    device: JDDevice
+    _direct_conns: DirectConnections = dataclasses.field(
+        init=False, default_factory=DirectConnections
+    )
+    _ready: bool = dataclasses.field(init=False, default=False)
 
     def refresh_direct_connections(self) -> None:
-        if (
-            not self._direct_connections.enabled
-            or time.time() < self._direct_connections.min_cooldown
-        ):
+        if not self._direct_conns.enabled or time.time() < self._direct_conns.cooldown:
             return
 
         logger.info("refreshing direct connections")
@@ -96,14 +91,14 @@ class MyJDConnection:
         if not resp.infos:
             return
 
-        self._direct_connections.update(set(resp.infos))
+        self._direct_conns.refresh(set(resp.infos))
 
     def enable_direct_connection(self) -> None:
-        self._direct_connections.enabled = True
+        self._direct_conns.enabled = True
         self.refresh_direct_connections()
 
     def disable_direct_connect(self) -> None:
-        self._direct_connections.enabled = False
+        self._direct_conns.enabled = False
 
     def request_json(
         self,
@@ -129,12 +124,12 @@ class MyJDConnection:
             finally:
                 self._ready = True
 
-        if self._direct_connections:
-            return self.myjd_request(path, params, http_action)
+        if not self._direct_conns:
+            return self._myjd_request(path, params, http_action)
 
         action_url = self.__action_url()
         now = time.time()
-        for address, cooldown in self._direct_connections:
+        for address, cooldown in self._direct_conns:
             if now < cooldown:
                 continue
 
@@ -147,17 +142,17 @@ class MyJDConnection:
                     api=f"http://{address.ip}:{address.port}",
                 )
             except requests.exceptions.RequestException:
-                self._direct_connections[address] = now + 60
+                self._direct_conns[address] = now + 60
                 continue
 
             # This connection worked, push it to the end to give it priority on the next request
-            self._direct_connections.push(address)
-            self._direct_connections.consecutive_errors = 0
+            self._direct_conns.push(address)
+            self._direct_conns.consecutive_errors = 0
             return response
 
         # Fallback to MyJD API
-        self._direct_connections.register_error()
-        return self.myjd_request(path, params, http_action)
+        self._direct_conns.register_error()
+        return self._myjd_request(path, params, http_action)
 
     def request_bytes(
         self,
@@ -165,10 +160,9 @@ class MyJDConnection:
         params: Params | None = (),
         http_action: Literal["GET", "POST"] = "POST",
     ) -> bytes:
-        response = self.request(path, params, http_action)
-        return response.content
+        return self.request(path, params, http_action).content
 
-    def myjd_request(
+    def _myjd_request(
         self,
         path: str,
         params: Any | None = (),
