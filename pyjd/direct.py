@@ -5,11 +5,13 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
+import requests
+
 from pyjd.common import Params, make_request
 from pyjd.jd_types import JDDevice
 
 if TYPE_CHECKING:
-    import requests
+    from collections.abc import Mapping
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +19,7 @@ logger = logging.getLogger(__name__)
 @dataclasses.dataclass(slots=True)
 class DirectConnection:
     base_url: str = "http://localhost:3128"
-    headers: dict[str, str] | None = None
+    headers: Mapping[str, str] | None = None
     device: JDDevice = dataclasses.field(
         init=False,
         default=JDDevice(
@@ -30,7 +32,7 @@ class DirectConnection:
     def is_connected(self) -> bool:
         try:
             make_request(self.base_url + "/jd/version", headers=self.headers)
-        except Exception:  # noqa: BLE001
+        except requests.exceptions.RequestException:
             return False
         else:
             return True

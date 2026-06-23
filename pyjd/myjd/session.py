@@ -36,34 +36,34 @@ class MyJDSessionBackup:
     connected: bool
 
     @staticmethod
-    def encode_secret(val: bytes | None) -> str | None:
+    def _encode_secret(val: bytes | None) -> str | None:
         return base64.b64encode(val).decode("ASCII") if val else None
 
     @staticmethod
-    def decode_secret(val: str | None) -> bytes | None:
+    def _decode_secret(val: str | None) -> bytes | None:
         return base64.b64decode(val.encode("ASCII")) if val else None
 
     @classmethod
     def freeze(cls, session: MyJDSession) -> Self:
         return cls(
-            login_secret=cls.encode_secret(session.login_secret),
-            device_secret=cls.encode_secret(session.device_secret),
+            login_secret=cls._encode_secret(session.login_secret),
+            device_secret=cls._encode_secret(session.device_secret),
             token=session.token,
             regain_token=session.regain_token,
-            server_encryption_token=cls.encode_secret(session.server_encryption_token),
-            device_encryption_token=cls.encode_secret(session.device_encryption_token),
+            server_encryption_token=cls._encode_secret(session.server_encryption_token),
+            device_encryption_token=cls._encode_secret(session.device_encryption_token),
             devices=session.devices,
             connected=session.connected,
         )
 
     def unfreeze(self) -> MyJDSession:
         return MyJDSession(
-            login_secret=self.decode_secret(self.login_secret),
-            device_secret=self.decode_secret(self.device_secret),
+            login_secret=self._decode_secret(self.login_secret),
+            device_secret=self._decode_secret(self.device_secret),
             token=self.token,
             regain_token=self.regain_token,
-            server_encryption_token=self.decode_secret(self.server_encryption_token),
-            device_encryption_token=self.decode_secret(self.device_encryption_token),
-            devices=list(self.devices),
+            server_encryption_token=self._decode_secret(self.server_encryption_token),
+            device_encryption_token=self._decode_secret(self.device_encryption_token),
+            devices=self.devices,
             connected=self.connected,
         )

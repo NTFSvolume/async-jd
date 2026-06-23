@@ -48,6 +48,9 @@ class JDDeviceClient:
         self.ui = UI(connection)
         self.update = Update(connection)
 
+    def __repr__(self) -> str:
+        return f"<{type(self).__name__}(connection={self.connection!r})>"
+
     @classmethod
     def direct_connect(
         cls,

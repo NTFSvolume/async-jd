@@ -47,7 +47,7 @@ class DictDataClass:
 def make_request(
     url: str,
     *,
-    headers: dict[str, str] | None = None,
+    headers: Mapping[str, str] | None = None,
     data: Any = None,
     timeout: int = 60,
 ) -> requests.Response:
