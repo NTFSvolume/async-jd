@@ -26,7 +26,7 @@ jobs:
 
       - name: Smoke test
         run: |
-          uv run python -c "from pyjd.jd_device import JDDevice"
+          uv run python -c "from pyjd.client import JDDeviceClient"
 
       - name: Start JDownloader
         timeout-minutes: 5

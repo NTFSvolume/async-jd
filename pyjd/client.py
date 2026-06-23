@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, final
+from typing import Self, final
 
+from pyjd.direct import DirectConnection
 from pyjd.endpoints.accounts import Accounts
 from pyjd.endpoints.captcha import Captcha
 from pyjd.endpoints.config import Config
@@ -19,19 +20,15 @@ from pyjd.endpoints.system import System
 from pyjd.endpoints.toolbar import Toolbar
 from pyjd.endpoints.ui import UI
 from pyjd.endpoints.update import Update
-
-if TYPE_CHECKING:
-    from pyjd.direct import DirectConnection
-    from pyjd.jd_types import JDDevice
-    from pyjd.myjd.connection import MyJDConnection
+from pyjd.myjd.api import MyJDAPI
+from pyjd.myjd.connection import MyJDConnection
 
 
 @final
 class JDDeviceClient:
     """A class that represents a JDownloader device and its functions."""
 
-    def __init__(self, connection: DirectConnection | MyJDConnection, device: JDDevice) -> None:
-        self._device = device
+    def __init__(self, connection: DirectConnection | MyJDConnection) -> None:
         self.connection = connection
         self.accounts = Accounts(connection)
         self.captcha = Captcha(connection)
@@ -50,3 +47,24 @@ class JDDeviceClient:
         self.toolbar = Toolbar(connection)
         self.ui = UI(connection)
         self.update = Update(connection)
+
+    @classmethod
+    def direct_connect(
+        cls,
+        base_url: str = "http://localhost:3128",
+        headers: dict[str, str] | None = None,
+    ) -> Self:
+        return cls(DirectConnection(base_url, headers))
+
+    @classmethod
+    def myjd_connect(
+        cls,
+        email: str,
+        password: str,
+        device_id: str | None,
+        device_name: str | None,
+    ) -> Self:
+        api = MyJDAPI()
+        api.connect(email, password)
+        device = api.get_device(device_id, device_name)
+        return cls(MyJDConnection(api, device))

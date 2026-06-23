@@ -1,4 +1,4 @@
-from pyjd.jd_device import JDDeviceClient
+from pyjd.client import JDDeviceClient
 
 
 def test_get() -> None:

@@ -7,7 +7,7 @@ import hmac
 from Crypto.Cipher import AES
 
 
-def _pad_bytes(s: bytes) -> bytes:
+def _pad_bytes(string: bytes) -> bytes:
     """Pad a string
 
     :param s: String to pad
@@ -17,10 +17,10 @@ def _pad_bytes(s: bytes) -> bytes:
     """
 
     return (
-        s
+        string
         + (
-            (AES.block_size - len(s) % AES.block_size)
-            * chr(AES.block_size - len(s) % AES.block_size)
+            (AES.block_size - len(string) % AES.block_size)
+            * chr(AES.block_size - len(string) % AES.block_size)
         ).encode()
     )
 

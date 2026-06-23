@@ -1,17 +1,15 @@
 """
-These are the types and constants that are defined in JDownloader.
+These are the types and constants that are defined in JDownloader
 
-For more information, see here:
-    https://my.jdownloader.org/developers/index.html#tag_342
+https://my.jdownloader.org/developers/index.html#tag_342
 """
 # ruff: noqa: N815
 
 from __future__ import annotations
 
 import dataclasses as py_dataclasses
-from abc import ABC, abstractmethod
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, Protocol
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 from pydantic import dataclasses
 
@@ -19,31 +17,9 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-class API(ABC):
-    @abstractmethod
-    def request(
-        self,
-        path: str,
-        http_method: Literal["GET", "POST"] = "GET",
-        params: Sequence[tuple[str, Any]] | None = None,
-        action: str | None = None,
-        api: str | None = None,
-        *,
-        binary: bool = False,
-    ) -> Any: ...
-
-    @abstractmethod
-    def raw_request(
-        self,
-        path: str,
-        http_method: Literal["GET", "POST"] = "GET",
-        params: Sequence[tuple[str, Any]] | None = None,
-        action: str | None = None,
-        api: str | None = None,
-    ) -> bytes: ...
-
-
 class Connection(Protocol):
+    device: JDDevice
+
     def action(
         self,
         path: str,

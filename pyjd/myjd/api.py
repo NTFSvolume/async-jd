@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pyjd.crypto import create_secret, decrypt_secret, encrypt_secret, sign_hmac_sha256
 from pyjd.http_client import make_request
-from pyjd.jd_types import API, JDDevice
+from pyjd.jd_types import JDDevice
 from pyjd.myjd.session import MyJDSession, MyJDSessionBackup
 
 if TYPE_CHECKING:
@@ -25,7 +25,7 @@ def _new_request_id() -> int:
     return int(time.time() * 1000)
 
 
-class MyJDAPI(API):
+class MyJDAPI:
     """Main class for connecting to the MyJD API."""
 
     def __init__(self) -> None:
@@ -162,15 +162,13 @@ class MyJDAPI(API):
 
         raise LookupError("Device not found\n")
 
-    def request(
+    def raw_request(
         self,
         path: str,
         http_method: Literal["GET", "POST"] = "GET",
         params: Iterable[tuple[str, Any]] | None = None,
         action: str | None = None,
         api: str | None = None,
-        *,
-        binary: bool = False,
     ) -> Any:
         """Make a request to the MyJD API."""
 
@@ -204,7 +202,7 @@ class MyJDAPI(API):
             json_data = encrypt_secret(self._session.device_encryption_token, b_data)
             request_url = api + (action or "") + path
 
-        encrypted_response = make_request(
+        resp = make_request(
             request_url,
             headers={"Content-Type": "application/aesjson-jd; charset=utf-8"}
             if json_data
@@ -212,29 +210,42 @@ class MyJDAPI(API):
             data=json_data,
             timeout=3,
         )
+        if resp.status_code == 200:
+            return resp
 
-        if encrypted_response.status_code != 200:
-            error_msg = self._decode_error(encrypted_response)
+        error_msg = self._decode_error(resp)
 
-            msg = (
-                "\n\tSOURCE: "
-                + error_msg["src"]
-                + "\n\tTYPE: "
-                + error_msg["type"]
-                + "\n------\nREQUEST_URL: "
-                + api
-                + path
-            )
+        msg = (
+            "\n\tSOURCE: "
+            + error_msg["src"]
+            + "\n\tTYPE: "
+            + error_msg["type"]
+            + "\n------\nREQUEST_URL: "
+            + api
+            + path
+        )
 
-            if http_method == "GET" and query:
-                msg += query
+        if http_method == "GET" and query:
+            msg += query
 
-            msg += "\n"
-            if data is not None:
-                msg += "DATA:\n" + data
+        msg += "\n"
+        if data is not None:
+            msg += "DATA:\n" + data
 
-            raise (RuntimeError(msg))
+        raise RuntimeError(msg)
 
+    def request(
+        self,
+        path: str,
+        http_method: Literal["GET", "POST"] = "GET",
+        params: Iterable[tuple[str, Any]] | None = None,
+        action: str | None = None,
+        api: str | None = None,
+        *,
+        binary: bool = False,
+    ) -> Any:
+        """Make a request to the MyJD API."""
+        encrypted_response = self.raw_request(path, http_method, params, action, api)
         if binary:
             self.update_request_id()
 
