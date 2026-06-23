@@ -31,7 +31,7 @@ class Plugins(Action, endpoint="plugins"):
     def query(self, query: AdvancedConfigQuery | None = None):
         """Query plugin configurations."""
 
-        query = query or AdvancedConfigQuery.default()
+        query = query or AdvancedConfigQuery()
         params = tuple(query)
         resp = self.action("/query", params)
 

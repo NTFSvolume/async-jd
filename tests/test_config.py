@@ -36,7 +36,7 @@ def test_list_enum(jd: JDDeviceClient) -> None:
 
 
 def test_query(jd: JDDeviceClient) -> None:
-    query = AdvancedConfigQuery.default()
+    query = AdvancedConfigQuery()
     query = dataclasses.replace(query, pattern=".*youtube.*")
     res = jd.config.query(query)
     assert type(res) is list

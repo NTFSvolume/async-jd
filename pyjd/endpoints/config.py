@@ -95,7 +95,7 @@ class Config(Action, endpoint="config"):
         :rtype: List[AdvancedConfigAPIEntry]
         """
 
-        query = advanced_config_query or AdvancedConfigQuery.default()
+        query = advanced_config_query or AdvancedConfigQuery()
         params = [query.__json__()]
         resp = self.action("/query", params=params)
         return [AdvancedConfigAPIEntry(**entry) for entry in resp]

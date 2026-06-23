@@ -11,7 +11,7 @@ from pyjd.common import Params, make_request
 from pyjd.jd_types import JDDevice
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Mapping
+    from collections.abc import Mapping
 
 logger = logging.getLogger(__name__)
 
@@ -59,23 +59,10 @@ class DirectConnection:
         data = {
             "apiVer": 1,
             "url": path,
-            "params": list(_adapt_params(params)),
+            "params": params or (),
             "rid": 12345,
         }
 
         return make_request(
             url, data=json.dumps(data), headers={"Content-Type": "application/json; charset=utf-8"}
         )
-
-
-def _adapt_params(params: list[Any] | None) -> Generator[Any]:
-    if params is None:
-        return
-
-    for param in params:
-        if isinstance(param, str):
-            yield param
-        elif isinstance(param, list):
-            yield list(_adapt_params(param))
-        else:
-            yield json.dumps(param)

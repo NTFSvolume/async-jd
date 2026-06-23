@@ -52,28 +52,16 @@ class AdvancedConfigAPIEntry(DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class AdvancedConfigQuery(DictDataClass):
-    defaultValues: bool
-    description: bool
-    enumInfo: bool
-    includeExtensions: bool
-    values: bool
     configInterface: str | None = None
+    defaultValues: bool = True
+    description: bool = True
+    enumInfo: bool = True
+    includeExtensions: bool = True
+    values: bool = True
     pattern: str | None = None
 
     def __repr__(self) -> str:
         return f"<AdvancedConfigQuery ({self.configInterface})>"
-
-    @staticmethod
-    def default():
-        return AdvancedConfigQuery(
-            configInterface=None,
-            defaultValues=True,
-            description=True,
-            enumInfo=True,
-            includeExtensions=True,
-            pattern=None,
-            values=True,
-        )
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
