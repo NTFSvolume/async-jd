@@ -1,6 +1,6 @@
 from pyjd.endpoints import Action
 from pyjd.jd_types import Plugin
-from pyjd.queries import AdvancedConfigAPIEntry, PluginsQuery
+from pyjd.queries import AdvancedConfigAPIEntry, AdvancedConfigQuery, PluginsQuery
 
 
 class Plugins(Action, endpoint="plugins"):
@@ -28,10 +28,11 @@ class Plugins(Action, endpoint="plugins"):
         resp = self.action("/list", params)
         return [Plugin(**p) for p in resp]
 
-    def query(self, config_query=AdvancedConfigQuery.default()):
+    def query(self, query: AdvancedConfigQuery | None = None):
         """Query plugin configurations."""
 
-        params = [config_query.__json__()]
+        query = query or AdvancedConfigQuery.default()
+        params = tuple(query)
         resp = self.action("/query", params)
 
         return [AdvancedConfigAPIEntry(**c) for c in resp]

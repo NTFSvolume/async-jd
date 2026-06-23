@@ -3,14 +3,12 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
-from pyjd.common import make_request
+from pyjd.common import Params, make_request
 from pyjd.jd_types import JDDevice
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
-
     import requests
 
 logger = logging.getLogger(__name__)
@@ -37,29 +35,31 @@ class DirectConnection:
         else:
             return True
 
-    def action(
+    def request_json(
         self,
         path: str,
-        params: Sequence[tuple[str, Any]] | None = None,
-        http_action: str = "POST",
-        *,
-        binary: bool = False,
+        params: Params | None = None,
+        http_action: Literal["GET", "POST"] = "GET",
     ) -> Any:
-        """Make the request to the JDownloader"""
-        content = self.request(path, params, http_action).content
-        if binary:
-            return content
-
+        content = self.request_bytes(path, params, http_action)
         data = json.loads(content)
         return data.get("data", data)
+
+    def request_bytes(
+        self,
+        path: str,
+        params: Params | None = None,
+        http_action: Literal["GET", "POST"] = "GET",
+    ) -> bytes:
+        return self.request(path, params, http_action).content
 
     def request(
         self,
         path: str,
-        params: Sequence[tuple[str, Any]] | None = None,
-        http_action: str = "POST",
+        params: Params | None = None,
+        http_action: Literal["GET", "POST"] = "GET",
     ) -> requests.Response:
-        assert http_action == "POST"
+        assert http_action == "GET"
         url = f"{self.base_url}{path}"
         if params:
             url = f"{url}?" + "&".join(map(json.dumps, params))

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import dataclasses
 import hashlib
 import json
 import logging
@@ -8,7 +7,7 @@ import time
 import urllib.parse
 from typing import TYPE_CHECKING, Any, Literal
 
-from pyjd.common import make_request
+from pyjd.common import Params, make_request
 from pyjd.crypto import create_secret, decrypt_secret, encrypt_secret, sign_hmac_sha256
 from pyjd.jd_types import JDDevice
 from pyjd.myjd.session import MyJDSession, MyJDSessionBackup
@@ -33,35 +32,39 @@ class MyJDAPI:
         self.__api_url = "https://api.jdownloader.org"
         self.__app_key = appkey or "https://github.com/NTFSvolume/async-jd"
         self.__api_version = 1
-        self._session: MyJDSession = MyJDSession()
+        self.__session: MyJDSession = MyJDSession()
 
     def __repr__(self) -> str:
-        return f"<{type(self).__name__}(session={self._session!r})>"
-
-    @property
-    def session_token(self) -> str:
-        if not self._session.token:
-            raise RuntimeError("No session token available")
-
-        return self._session.token
+        return f"<{type(self).__name__}(session={self.__session!r})>"
 
     @property
     def __server_encryption_token(self) -> bytes:
-        if self._session.server_encryption_token:
-            return self._session.server_encryption_token
-        if not self._session.login_secret:
+        if self.__session.server_encryption_token:
+            return self.__session.server_encryption_token
+        if not self.__session.login_secret:
             raise RuntimeError("No login secret")
-        return self._session.login_secret
+        return self.__session.login_secret
 
     @property
     def __device_encryption_token(self) -> bytes:
-        if not self._session.device_encryption_token:
+        if not self.__session.device_encryption_token:
             raise RuntimeError("No device encryption token")
-        return self._session.device_encryption_token
+        return self.__session.device_encryption_token
+
+    @property
+    def session_token(self) -> str:
+        if not self.__session.token:
+            raise RuntimeError("No session token available")
+
+        return self.__session.token
 
     @property
     def connected(self) -> bool:
-        return self._session.connected
+        return self.__session.connected
+
+    @property
+    def devices(self) -> tuple[JDDevice, ...]:
+        return self.__session.devices
 
     def set_app_key(self, app_key: str) -> None:
         self.__app_key = app_key
@@ -73,14 +76,14 @@ class MyJDAPI:
 
         s_token = self.session_token
 
-        if not self._session.device_secret:
+        if not self.__session.device_secret:
             raise RuntimeError("No device secret available")
 
         def digest(token: bytes) -> bytes:
             return hashlib.sha256(token + bytearray.fromhex(s_token)).digest()
 
-        self._session.server_encryption_token = digest(self.__server_encryption_token)
-        self._session.device_encryption_token = digest(self._session.device_secret)
+        self.__session.server_encryption_token = digest(self.__server_encryption_token)
+        self.__session.device_encryption_token = digest(self.__session.device_secret)
 
     def update_request_id(self) -> None:
         """Update ``__request_id``.
@@ -91,7 +94,7 @@ class MyJDAPI:
 
     def connect(self, email: str, password: str) -> bool:
         self.update_request_id()
-        self._session = MyJDSession(
+        self.__session = MyJDSession(
             login_secret=create_secret(email, password, "server"),
             device_secret=create_secret(email, password, "device"),
         )
@@ -103,10 +106,10 @@ class MyJDAPI:
                 ("appkey", self.__app_key),
             ],
         )
-        self._session.connected = True
+        self.__session.connected = True
         self.update_request_id()
-        self._session.token = response["sessiontoken"]
-        self._session.regain_token = response["regaintoken"]
+        self.__session.token = response["sessiontoken"]
+        self.__session.regain_token = response["regaintoken"]
         self.__update_encryption_tokens()
         self.update_devices()
         return response
@@ -121,13 +124,13 @@ class MyJDAPI:
             "/my/reconnect",
             "GET",
             [
-                ("sessiontoken", self._session.token),
-                ("regaintoken", self._session.regain_token),
+                ("sessiontoken", self.__session.token),
+                ("regaintoken", self.__session.regain_token),
             ],
         )
         self.update_request_id()
-        self._session.token = response["sessiontoken"]
-        self._session.regain_token = response["regaintoken"]
+        self.__session.token = response["sessiontoken"]
+        self.__session.regain_token = response["regaintoken"]
         self.__update_encryption_tokens()
         return response
 
@@ -139,32 +142,29 @@ class MyJDAPI:
         """
 
         response = self.request_json(
-            "/my/disconnect", "GET", [("sessiontoken", self._session.token)]
+            "/my/disconnect", "GET", [("sessiontoken", self.__session.token)]
         )
         self.update_request_id()
-        self._session = MyJDSession()
+        self.__session = MyJDSession()
         return response
 
     def export_session(self) -> MyJDSessionBackup:
-        return MyJDSessionBackup.freeze(self._session)
+        return MyJDSessionBackup.freeze(self.__session)
 
-    def import_session(self, session: MyJDSessionBackup | MyJDSession) -> None:
-        if type(session) is MyJDSession:
-            self._session = dataclasses.replace(session)
-        else:
-            self._session = session.unfreeze()
+    def import_session(self, session: MyJDSessionBackup) -> None:
+        self.__session = session.unfreeze()
 
     def update_devices(self) -> bool:
         response = self.request_json(
-            "/my/listdevices", "GET", [("sessiontoken", self._session.token)]
+            "/my/listdevices",
+            "GET",
+            [
+                ("sessiontoken", self.__session.token),
+            ],
         )
         self.update_request_id()
-        self._session.devices = [JDDevice(**d) for d in response["list"]]
+        self.__session.devices = tuple(JDDevice(**d) for d in response["list"])
         return response
-
-    @property
-    def devices(self) -> list[JDDevice]:
-        return self._session.devices
 
     def get_device(self, device_name: str | None = None, device_id: str | None = None) -> JDDevice:
         if not self.connected:
@@ -173,7 +173,7 @@ class MyJDAPI:
         if not (device_id or device_name):
             raise ValueError("Either device_id or device_name are required")
 
-        for device in self._session.devices:
+        for device in self.__session.devices:
             if device_id is not None and device.id != device_id:
                 continue
             if device_name is not None and device.name != device_name:
@@ -183,16 +183,16 @@ class MyJDAPI:
 
         raise LookupError("Device not found\n")
 
-    def raw_request(
+    def request(
         self,
         path: str,
         http_method: Literal["GET", "POST"] = "GET",
-        params: Iterable[tuple[str, Any]] | None = None,
+        params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
     ) -> requests.Response:
         """Make a request to the MyJD API."""
-
+        self.update_request_id()
         api = api or self.__api_url
         data = None
         query = None
@@ -217,10 +217,10 @@ class MyJDAPI:
             # Removing quotes around null elements.
             data = data.replace('"null"', "null").replace("'null'", "null")
             b_data = data.encode("utf-8")
-            if not self._session.device_encryption_token:
+            if not self.__session.device_encryption_token:
                 raise RuntimeError("No device encryption token\n")
 
-            json_data = encrypt_secret(self._session.device_encryption_token, b_data)
+            json_data = encrypt_secret(self.__session.device_encryption_token, b_data)
             request_url = api + (action or "") + path
 
         resp = make_request(
@@ -234,7 +234,7 @@ class MyJDAPI:
         if resp.status_code == 200:
             return resp
 
-        error_msg = self._decode_error(resp)
+        error_msg = _decode_error(resp.text, self.__session.device_encryption_token)
 
         msg = (
             "\n\tSOURCE: "
@@ -259,41 +259,15 @@ class MyJDAPI:
         self,
         path: str,
         http_method: Literal["GET", "POST"] = "GET",
-        params: Iterable[tuple[str, Any]] | None = None,
+        params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
     ) -> Any:
         """Make a request to the MyJD API."""
-        resp = self.raw_request(path, http_method, params, action, api)
-        return self._decode_response(resp, action)
+        resp = self.request(path, http_method, params, action, api)
+        return self.decode_response(resp, action)
 
-    def request_bytes(
-        self,
-        path: str,
-        http_method: Literal["GET", "POST"] = "GET",
-        params: Iterable[tuple[str, Any]] | None = None,
-        action: str | None = None,
-        api: str | None = None,
-    ) -> bytes:
-        resp = self.raw_request(path, http_method, params, action, api)
-        self.update_request_id()
-        # Binary content is not encrypted
-        return resp.content
-
-    def _decode_error(self, encrypted_response: requests.Response) -> Any:
-        try:
-            return json.loads(encrypted_response.text)
-        except json.JSONDecodeError:
-            try:
-                return json.loads(
-                    decrypt_secret(self.__device_encryption_token, encrypted_response.text)
-                )
-            except json.JSONDecodeError:
-                raise RuntimeError(
-                    "Failed to decode response: {}", encrypted_response.text
-                ) from None
-
-    def _decode_response(
+    def decode_response(
         self, encrypted_response: requests.Response, action: str | None
     ) -> Any | None:
         secret_token = (
@@ -310,7 +284,7 @@ class MyJDAPI:
         return json_data
 
 
-def _prepare_get_query(params: Iterable[tuple[str, str]] | None) -> Generator[str]:
+def _prepare_get_query(params: Params | None) -> Generator[str]:
     if params is None:
         return
     for name, value in params:
@@ -324,3 +298,15 @@ def _prepare_post_query(params: Iterable[Any] | None = None) -> Generator[Any]:
 
     for param in params:
         yield param if isinstance(param, list) else json.dumps(param)
+
+
+def _decode_error(text: str, device_encryption_token: bytes | None) -> Any:
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        if not device_encryption_token:
+            raise RuntimeError("Failed to decode response: {}", text) from None
+        try:
+            return json.loads(decrypt_secret(device_encryption_token, text))
+        except json.JSONDecodeError:
+            raise RuntimeError("Failed to decode response: {}", text) from None

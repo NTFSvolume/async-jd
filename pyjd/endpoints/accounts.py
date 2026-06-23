@@ -8,18 +8,7 @@ from pyjd.queries import AccountQuery
 class Accounts(Action, endpoint="accountsV2"):
     def add_account(self, premium_hoster: str, username: str, password: str) -> None:
         """Add a premium hoster account.
-
         .. warning:: The password is used in plain text, so beware...
-
-        :param premium_hoster: The name of the premium hoster.
-            See ``list_premium_hoster`` for possible names.
-        :type premium_hoster: str
-        :param username: User name or email address for that account.
-        :type username: str
-        :param password: Password for that account.
-        :type password: str
-        :return: empty
-        :rtype: None
         """
 
         params = [premium_hoster, username, password]
@@ -31,20 +20,7 @@ class Accounts(Action, endpoint="accountsV2"):
         """Add a basic auth account.
 
         These accounts are plain HTTP or FTP connections, with passwords.
-
-        :param auth_type: The auth type has to be on of the following:
-
-            - "HTTP"
-            - "FTP"
-        :type auth_type: BasicAuthType
-        :param hostmask: Mask of the account host.
-        :type hostmask: str
-        :param username: User name for the account.
-        :type username: str
-        :param password: Password for the account.
-        :type password: str
         :return: The ID of the newly created basic auth account.
-        :rtype: int
         """
 
         params = [auth_type.value, hostmask, username, password]
@@ -87,35 +63,21 @@ class Accounts(Action, endpoint="accountsV2"):
         return self.action("/getPremiumHosterUrl", params)
 
     def list_accounts(self, account_query: AccountQuery | None = None) -> list[Account]:
-        """List premium hoster accounts.
-
-        :param params: An AccountQuery object.
-        :type: AccountQuery
-        :return: A list of accounts
-        :rtype: List[Account]
-        """
+        """List premium hoster accounts."""
 
         account_query = account_query or AccountQuery()
-        params = [account_query.__json__()]
+        params = account_query.__json__().items()
         resp = self.action("/listAccounts", params)
         return [Account(**acc) for acc in resp]
 
     def list_basic_auth(self) -> list[BasicAuth]:
-        """List basic auth accounts.
-
-        :return: A list of basic auth accounts.
-        :rtype: list[BasicAuthentication]
-        """
+        """List basic auth accounts."""
 
         resp = self.action("/listBasicAuth")
         return [BasicAuth(**auth) for auth in resp]
 
     def list_premium_hoster(self) -> list[str]:
-        """List known premium hosters.
-
-        :return: A list of all known premium hosters.
-        :rtype: List[str]
-        """
+        """List known premium hosters."""
 
         return self.action("/listPremiumHoster")
 
@@ -154,9 +116,6 @@ class Accounts(Action, endpoint="accountsV2"):
 
     def remove_basic_auths(self, basic_auth_ids: list[int]) -> bool:
         """Remove basic auths for ``basic_auth_ids``.
-
-        :param basic_auth_ids: A list of basic auth ids.
-        :type account_ids: List[int]
         :return: Success.
         :rtype: bool
         """
@@ -181,19 +140,10 @@ class Accounts(Action, endpoint="accountsV2"):
         return self.action("/setUserNameAndPassword", params)
 
     def update_basic_auth(self, basic_authentication: BasicAuth) -> bool:
-        """Update the credentials for a basic auth.
-
-        .. note ::
-
-            It is recommended to use the result of a ``list_basic_auth`` query
-            for the input parameters. This way all necessary fields are filled
-            and you can just update select parameters.
-
-        :param basic_authentication: The new account parameters.
-        :type basic_authentication: dict, BasicAuthentication
+        """Update the credentials for a basic auth
         :return: Success
         :rtype: bool
         """
 
-        params = [basic_authentication.__json__()]
+        params = tuple(basic_authentication)
         return self.action("/updateBasicAuth", params)

@@ -5,11 +5,14 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any, Literal
 
+import requests
+
 from pyjd.jd_types import Address, DirectConnectionInfos
 
 if TYPE_CHECKING:
-    from collections.abc import Generator, Sequence
+    from collections.abc import Generator
 
+    from pyjd.common import Params
     from pyjd.jd_types import JDDevice
     from pyjd.myjd.api import MyJDAPI
 
@@ -59,6 +62,10 @@ class DirectConnections:
         for address in (*new, *tuple(self._address_map)):
             self.push(address)
 
+    def register_error(self) -> None:
+        self.consecutive_errors += 1
+        self.min_cooldown = int(time.time() + (60 * self.consecutive_errors))
+
 
 class MyJDConnection:
     def __init__(
@@ -98,14 +105,24 @@ class MyJDConnection:
     def disable_direct_connect(self) -> None:
         self._direct_connections.enabled = False
 
-    def action(
+    def request_json(
         self,
         path: str,
-        params: Sequence[tuple[str, str | int]] | None = (),
+        params: Params | None = (),
         http_action: Literal["GET", "POST"] = "POST",
-        *,
-        binary: bool = False,
-    ) -> dict[str, Any] | None:
+    ) -> Any:
+        response = self.request(path, params, http_action)
+        data = self.api.decode_response(response, self.__action_url())
+        if data is None:
+            return None
+        return data.get("data", data)
+
+    def request(
+        self,
+        path: str,
+        params: Params | None = (),
+        http_action: Literal["GET", "POST"] = "POST",
+    ) -> requests.Response:
         if not self._ready:
             try:
                 self.refresh_direct_connections()
@@ -113,7 +130,7 @@ class MyJDConnection:
                 self._ready = True
 
         if self._direct_connections:
-            return self._myjd_request(path, params, http_action, binary=binary)
+            return self.myjd_request(path, params, http_action)
 
         action_url = self.__action_url()
         now = time.time()
@@ -121,48 +138,45 @@ class MyJDConnection:
             if now < cooldown:
                 continue
 
-            response = self.api.request_json(
-                path,
-                http_action,
-                params,
-                action_url,
-                api=f"http://{address.ip}:{address.port}",
-                binary=binary,
-            )
-            if response is None:
+            try:
+                response = self.api.request(
+                    path,
+                    http_action,
+                    params,
+                    action_url,
+                    api=f"http://{address.ip}:{address.port}",
+                )
+            except requests.exceptions.RequestException:
                 self._direct_connections[address] = now + 60
                 continue
 
-            # This connection worked, puhs it to the end to give it priority on the next request
+            # This connection worked, push it to the end to give it priority on the next request
             self._direct_connections.push(address)
             self._direct_connections.consecutive_errors = 0
-            if binary:
-                return response
-            return response.get("data", response)
+            return response
 
         # Fallback to MyJD API
-        self._direct_connections.consecutive_errors += 1
-        self._direct_connections.min_cooldown = int(
-            now + (60 * self._direct_connections.consecutive_errors)
-        )
-        return self._myjd_request(path, params, http_action, binary=binary)
+        self._direct_connections.register_error()
+        return self.myjd_request(path, params, http_action)
 
-    def _myjd_request(
+    def request_bytes(
+        self,
+        path: str,
+        params: Params | None = (),
+        http_action: Literal["GET", "POST"] = "POST",
+    ) -> bytes:
+        response = self.request(path, params, http_action)
+        return response.content
+
+    def myjd_request(
         self,
         path: str,
         params: Any | None = (),
         http_action: Literal["GET", "POST"] = "POST",
-        *,
-        binary: bool = False,
-    ):
-        response = self.api.request_json(
-            path, http_action, params, self.__action_url(), binary=binary
-        )
-        if response is None or binary:
-            return response
-
+    ) -> requests.Response:
+        response = self.api.request(path, http_action, params, self.__action_url())
         self.refresh_direct_connections()
-        return response.get("data", response)
+        return response
 
     def __action_url(self) -> str:
         return "/t_" + self.api.session_token + "_" + self.device.id

@@ -1,7 +1,7 @@
 import dataclasses
 
 from pyjd.client import JDDeviceClient
-from pyjd.queries import AdvancedConfigQuery
+from pyjd.queries import AdvancedConfigQuery, ListConfigQuery
 
 
 def test_get(jd: JDDeviceClient) -> None:
@@ -23,7 +23,7 @@ def test_get_default(jd: JDDeviceClient) -> None:
 
 
 def test_list(jd: JDDeviceClient) -> None:
-    youtube_config = jd.config.list(".*youtube.*")
+    youtube_config = jd.config.list(ListConfigQuery(".*youtube.*"))
     all_config = jd.config.list()
     assert len(youtube_config) > 0
     assert len(youtube_config) < len(all_config)

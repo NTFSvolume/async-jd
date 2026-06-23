@@ -17,7 +17,7 @@ class MyJDSession:
     regain_token: str | None = None
     server_encryption_token: bytes | None = None
     device_encryption_token: bytes | None = None
-    devices: list[JDDevice] = dataclasses.field(default_factory=list)
+    devices: tuple[JDDevice, ...] = ()
     connected: bool = False
 
     def __repr__(self) -> str:
@@ -52,7 +52,7 @@ class MyJDSessionBackup:
             regain_token=session.regain_token,
             server_encryption_token=cls.encode_secret(session.server_encryption_token),
             device_encryption_token=cls.encode_secret(session.device_encryption_token),
-            devices=tuple(session.devices),
+            devices=session.devices,
             connected=session.connected,
         )
 

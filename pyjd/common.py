@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+from collections.abc import Collection
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
 import requests
@@ -14,6 +15,8 @@ if TYPE_CHECKING:
 
 
 _MISSING = object()
+
+type Params = Collection[tuple[str, Any] | str | int | list[int] | list[str]]
 
 
 class DictDataClass:
