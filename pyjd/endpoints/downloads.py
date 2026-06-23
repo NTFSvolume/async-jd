@@ -164,17 +164,16 @@ class Downloads(Action, endpoint="downloadsV2"):
 
     def move_to_new_package(
         self,
-        linkIds: list[int] = [],
-        pkgIds: list[int] = [],
-        newPkgName: str = "",
-        downloadPath: str = "",
-    ) -> Any:
+        new_pkg_name: str,
+        *,
+        link_ids: list[int] = [],
+        pkg_ids: list[int] = [],
+        download_path: str = "",
+    ) -> bool:
         """Move link_ids and pkg_ids to a new package"""
 
-        # params = [link_ids, pkg_ids, new_pkg_name, download_path]
-        params = locals()
-        params.pop("self")
-        return self.action("/movetoNewPackage", [params])
+        params = [link_ids, pkg_ids, new_pkg_name, download_path]
+        return self.action("/movetoNewPackage", params) == ""
 
     def package_count(self) -> int:
         """Get the number of packages in the download list.
@@ -240,7 +239,7 @@ class Downloads(Action, endpoint="downloadsV2"):
         params = [link, new_name]
         self.action("/renameLink", params)
 
-    def rename_package(self, package_id: str = "", new_name: str = "") -> None:
+    def rename_package(self, package_id: int, new_name: str) -> None:
         """Rename a package.
 
         :param package_id: ID of the packages
@@ -250,7 +249,7 @@ class Downloads(Action, endpoint="downloadsV2"):
         """
 
         params = [package_id, new_name]
-        return self.action("/renamePackage", params)
+        return self.action("/renamePackage", params) == ""
 
     def reset_links(self, link_ids: list[int] = [], package_ids: list[int] = []) -> None:
         """Reset links/packages in the download list.

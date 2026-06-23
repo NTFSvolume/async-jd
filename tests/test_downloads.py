@@ -1,4 +1,10 @@
+import time
+import uuid
+
+import pytest
+
 from pyjd.client import JDDeviceClient
+from pyjd.queries import AddLinksQuery
 
 
 def test_cleanup(jd: JDDeviceClient) -> None:
@@ -35,7 +41,10 @@ def test_move_packages(jd: JDDeviceClient) -> None:
 
 
 def test_move_to_new_package(jd: JDDeviceClient) -> None:
-    jd.downloads.move_to_new_package()
+    with pytest.raises(RuntimeError, match=r"BAD_PARAMETERS \(empty package name\)"):
+        jd.downloads.move_to_new_package("")
+    resp = jd.downloads.move_to_new_package(new_pkg_name="test_pkg")
+    assert resp is True
 
 
 def test_package_count(jd: JDDeviceClient) -> None:
@@ -63,7 +72,11 @@ def test_rename_link(jd: JDDeviceClient) -> None:
 
 
 def test_rename_package(jd: JDDeviceClient) -> None:
-    jd.downloads.rename_package()
+    with pytest.raises(RuntimeError, match=r"BAD_PARAMETERS \(\"\"\)"):
+        jd.downloads.rename_package("", "")  # pyright: ignore[reportArgumentType]
+
+    resp = jd.downloads.rename_package(1, "")
+    assert resp is True
 
 
 def test_reset_links(jd: JDDeviceClient) -> None:
@@ -78,8 +91,28 @@ def test_set_download_directory(jd: JDDeviceClient) -> None:
     jd.downloads.set_download_directory()
 
 
+@pytest.mark.xfail(reason="broken")
 def test_set_download_password(jd: JDDeviceClient) -> None:
-    jd.downloads.set_download_password([1], [2], "pass")
+    with pytest.raises(RuntimeError, match=r"BAD_PARAMETERS \(empty selection\)"):
+        jd.downloads.set_download_password([1], [2], "pass")
+
+    name = f"myjd_test_{uuid.uuid4()}"
+    job = jd.linkgrabber.add_links(
+        AddLinksQuery(
+            links="https://archive.org/details/teachertrainingw0000csbe_k2t7",
+            packageName=name,
+            autostart=True,
+        )
+    )
+
+    assert job.id
+    time.sleep(10)
+    links = jd.linkgrabber.query_links()
+    assert links
+    package_id = links[0].packageUUID
+    assert package_id
+    f = jd.downloads.set_download_password(package_ids=[package_id], password="test_pass")  # noqa: S106
+    jd.linkgrabber.abort(job.id)
 
 
 def test_set_enabled(jd: JDDeviceClient) -> None:

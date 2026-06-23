@@ -140,10 +140,5 @@ class Accounts(Action, endpoint="accountsV2"):
         return self.action("/setUserNameAndPassword", params)
 
     def update_basic_auth(self, basic_authentication: BasicAuth) -> bool:
-        """Update the credentials for a basic auth
-        :return: Success
-        :rtype: bool
-        """
-
-        params = tuple(basic_authentication)
+        params = [basic_authentication.__json__()]
         return self.action("/updateBasicAuth", params)
