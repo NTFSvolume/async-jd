@@ -5,13 +5,12 @@ from pyjd.jd_types import (
     DeleteAction,
     DownloadLink,
     FilePackage,
-    LinkQuery,
     Mode,
-    PackageQuery,
     Priority,
     Reason,
     SelectionType,
 )
+from pyjd.queries import LinkQuery, PackageQuery
 
 
 class Downloads(Action, endpoint="downloadsV2"):

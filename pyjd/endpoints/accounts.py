@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pyjd.endpoints import Action
-from pyjd.jd_types import Account, AccountQuery, BasicAuth, BasicAuthType
+from pyjd.jd_types import Account, BasicAuth, BasicAuthType
+from pyjd.queries import AccountQuery
 
 
 class Accounts(Action, endpoint="accountsV2"):
@@ -94,7 +95,7 @@ class Accounts(Action, endpoint="accountsV2"):
         :rtype: List[Account]
         """
 
-        account_query = account_query or AccountQuery.default()
+        account_query = account_query or AccountQuery()
         params = [account_query.__json__()]
         resp = self.action("/listAccounts", params)
         return [Account(**acc) for acc in resp]

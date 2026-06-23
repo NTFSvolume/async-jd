@@ -1,7 +1,7 @@
 import dataclasses
 
 from pyjd.client import JDDeviceClient
-from pyjd.jd_types import AdvancedConfigQuery
+from pyjd.queries import AdvancedConfigQuery
 
 
 def test_get(jd: JDDeviceClient) -> None:

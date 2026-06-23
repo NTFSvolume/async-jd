@@ -1,7 +1,8 @@
 import dataclasses
 
 from pyjd.client import JDDeviceClient
-from pyjd.jd_types import AccountQuery, BasicAuthType
+from pyjd.jd_types import BasicAuthType
+from pyjd.queries import AccountQuery
 
 
 def test_add_account(jd: JDDeviceClient) -> None:

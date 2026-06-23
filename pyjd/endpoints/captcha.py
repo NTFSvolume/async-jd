@@ -32,23 +32,13 @@ class Captcha(Action, endpoint="captcha"):
 
         params = [job_id]
         resp = self.action("/getCaptchaJob", params)
-        captcha_job = CaptchaJob(**resp)
-        return captcha_job
+        return CaptchaJob(**resp)
 
     def list(self) -> list[CaptchaJob]:
-        """Get the waiting captchas
-
-        :return: Returns a list of all available captcha jobs
-        :rtype: List[CaptchaJob]
-        """
+        """Get the waiting captchas"""
 
         resp = self.action("/list", None)
-        captcha_jobs = []
-        for job in resp:
-            captcha_job = CaptchaJob(**job)
-            captcha_jobs.append(captcha_job)
-
-        return captcha_jobs
+        return [CaptchaJob(**job) for job in resp]
 
     def skip(self, captcha_id: int, skip_type: SkipRequest = SkipRequest.SINGLE) -> bool:
         """Skip a captcha with a SkipRequest type
@@ -62,8 +52,7 @@ class Captcha(Action, endpoint="captcha"):
         """
 
         params = [captcha_id, skip_type.value]
-        resp = self.action("/skip", params)
-        return resp
+        return self.action("/skip", params)
 
     def solve(self, captcha_id: int, result: str, result_format: str | None = None) -> bool:
         """Solve a captcha.
@@ -81,5 +70,4 @@ class Captcha(Action, endpoint="captcha"):
         params = [captcha_id, result]
         if result_format:
             params.append(result_format)
-        resp = self.action("/solve", params)
-        return resp
+        return self.action("/solve", params)

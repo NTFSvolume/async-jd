@@ -2,7 +2,8 @@ import builtins
 from typing import Any
 
 from pyjd.endpoints import Action
-from pyjd.jd_types import AdvancedConfigAPIEntry, AdvancedConfigQuery, EnumOption
+from pyjd.jd_types import EnumOption
+from pyjd.queries import AdvancedConfigAPIEntry, AdvancedConfigQuery, ListConfigQuery
 
 
 class Config(Action, endpoint="config"):
@@ -44,11 +45,7 @@ class Config(Action, endpoint="config"):
 
     def list(
         self,
-        pattern: str = "",
-        returnDescription: bool = True,
-        returnValues: bool = True,
-        returnDefaultValues: bool = True,
-        returnEnumInfo: bool = True,
+        query: ListConfigQuery | None = None,
     ) -> list[AdvancedConfigAPIEntry]:
         """List all available config entries.
 
@@ -67,14 +64,8 @@ class Config(Action, endpoint="config"):
         :rtype: List[AdvancedConfigAPIEntry]
         """
 
-        params = [
-            pattern,
-            returnDescription,
-            returnValues,
-            returnDefaultValues,
-            returnEnumInfo,
-        ]
-        resp = self.action("/list", params)
+        query = query or ListConfigQuery()
+        resp = self.action("/list", query.__json__())
         return [AdvancedConfigAPIEntry(**entry) for entry in resp]
 
     def list_enum(self, enum_type: str) -> builtins.list[EnumOption]:
@@ -107,7 +98,6 @@ class Config(Action, endpoint="config"):
         query = advanced_config_query or AdvancedConfigQuery.default()
         params = [query.__json__()]
         resp = self.action("/query", params=params)
-
         return [AdvancedConfigAPIEntry(**entry) for entry in resp]
 
     def reset(self, interface_name: str, storage: str, key: str) -> bool:

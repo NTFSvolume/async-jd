@@ -1,5 +1,6 @@
 from pyjd.endpoints import Action
-from pyjd.jd_types import Extension, ExtensionQuery
+from pyjd.jd_types import Extension
+from pyjd.queries import ExtensionQuery
 
 
 class Extensions(Action, endpoint="extensions"):

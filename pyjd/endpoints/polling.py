@@ -1,5 +1,5 @@
 from pyjd.endpoints import Action
-from pyjd.jd_types import APIQuery
+from pyjd.queries import APIQuery
 
 
 class Polling(Action, endpoint="polling"):

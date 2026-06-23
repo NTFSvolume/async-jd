@@ -2,17 +2,14 @@ from typing import Any
 
 from pyjd.endpoints import Action
 from pyjd.jd_types import (
-    AddLinksQuery,
     CrawledLink,
-    CrawledLinkQuery,
     CrawledPackage,
-    CrawledPackageQuery,
     DeleteAction,
     JobLinkCrawler,
     LinkCollectingJob,
-    LinkCrawlerJobsQuery,
     LinkVariant,
 )
+from pyjd.queries import AddLinksQuery, CrawledLinkQuery, CrawledPackageQuery, LinkCrawlerJobsQuery
 
 
 class LinkGrabber(Action, endpoint="linkgrabberv2"):

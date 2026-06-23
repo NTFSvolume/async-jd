@@ -1,10 +1,6 @@
 from pyjd.endpoints import Action
-from pyjd.jd_types import (
-    AdvancedConfigAPIEntry,
-    AdvancedConfigQuery,
-    Plugin,
-    PluginsQuery,
-)
+from pyjd.jd_types import Plugin
+from pyjd.queries import AdvancedConfigAPIEntry, PluginsQuery
 
 
 class Plugins(Action, endpoint="plugins"):
