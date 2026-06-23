@@ -6,8 +6,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from pyjd.http_client import make_request
-from pyjd.jd_device import JDDevice, JDDeviceClient
-from pyjd.jd_types import Connection
+from pyjd.jd_device import JDDeviceClient
+from pyjd.jd_types import Connection, JDDevice
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

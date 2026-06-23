@@ -60,6 +60,13 @@ class _DictDataClass:
         return py_dataclasses.asdict(self)
 
 
+@dataclasses.dataclass(slots=True, frozen=True)
+class JDDevice:
+    name: str
+    id: str
+    type: str
+
+
 class AbstractType(StrEnum):
     """Abstract types that are used for config entries."""
 

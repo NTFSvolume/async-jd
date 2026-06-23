@@ -1,7 +1,7 @@
-import dataclasses
-from typing import final
+from __future__ import annotations
 
-from pyjd.direct import DirectConnection
+from typing import TYPE_CHECKING, final
+
 from pyjd.endpoints.accounts import Accounts
 from pyjd.endpoints.captcha import Captcha
 from pyjd.endpoints.config import Config
@@ -19,28 +19,18 @@ from pyjd.endpoints.system import System
 from pyjd.endpoints.toolbar import Toolbar
 from pyjd.endpoints.ui import UI
 from pyjd.endpoints.update import Update
-from pyjd.myjd_connection_helper import MyJDConnection
 
-
-@dataclasses.dataclass(slots=True, frozen=True)
-class JDDevice:
-    name: str
-    id: str
-    type: str
+if TYPE_CHECKING:
+    from pyjd.direct import DirectConnection
+    from pyjd.jd_types import JDDevice
+    from pyjd.myjd.connection import MyJDConnection
 
 
 @final
 class JDDeviceClient:
     """A class that represents a JDownloader device and its functions."""
 
-    def __init__(
-        self,
-        connection: DirectConnection | MyJDConnection,
-        device: JDDevice,
-    ):
-        self.name = device.name
-        self.id = device.id
-        self.type = device.type
+    def __init__(self, connection: DirectConnection | MyJDConnection, device: JDDevice) -> None:
         self._device = device
         self.connection = connection
         self.accounts = Accounts(connection)

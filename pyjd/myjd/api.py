@@ -10,10 +10,8 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pyjd.crypto import create_secret, decrypt_secret, encrypt_secret, sign_hmac_sha256
 from pyjd.http_client import make_request
-from pyjd.jd_device import JDDevice, JDDeviceClient
-from pyjd.jd_types import API
-from pyjd.myjd_connection_helper import MyJDConnection
-from pyjd.myjd_session import MyJDSession, MyJDSessionBackup
+from pyjd.jd_types import API, JDDevice
+from pyjd.myjd.session import MyJDSession, MyJDSessionBackup
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Iterable
@@ -38,7 +36,10 @@ class MyJDAPI(API):
         self._session: MyJDSession = MyJDSession()
 
     @property
-    def session_token(self) -> str | None:
+    def session_token(self) -> str:
+        if not self._session.token:
+            raise RuntimeError("No session token available")
+
         return self._session.token
 
     @property
@@ -52,10 +53,8 @@ class MyJDAPI(API):
         """Update the ``server_encryption_token`` and
         ``device_encryption_token``.
         """
-        if not self._session.token:
-            raise RuntimeError("No session token available")
 
-        s_token = self._session.token
+        s_token = self.session_token
 
         if not self._session.device_secret:
             raise RuntimeError("No device secret available")
@@ -146,15 +145,9 @@ class MyJDAPI(API):
     def devices(self) -> list[JDDevice]:
         return self._session.devices
 
-    def get_device(
-        self,
-        device_name: str | None = None,
-        device_id: str | None = None,
-        refresh_direct_connections=True,
-    ) -> JDDeviceClient:
-
+    def get_device(self, device_name: str | None = None, device_id: str | None = None) -> JDDevice:
         if not self.connected:
-            raise (Exception("No connection established\n"))
+            raise RuntimeError("No connection established\n")
 
         if not (device_id or device_name):
             raise ValueError("Either device_id or device_name are required")
@@ -165,14 +158,9 @@ class MyJDAPI(API):
             if device_name is not None and device.name != device_name:
                 continue
 
-            return JDDeviceClient(
-                self,
-                MyJDConnection,
-                device,
-                refresh_direct_connections=refresh_direct_connections,
-            )
+            return device
 
-        raise (Exception("Device not found\n"))
+        raise LookupError("Device not found\n")
 
     def request(
         self,
@@ -181,6 +169,7 @@ class MyJDAPI(API):
         params: Iterable[tuple[str, Any]] | None = None,
         action: str | None = None,
         api: str | None = None,
+        *,
         binary: bool = False,
     ) -> Any:
         """Make a request to the MyJD API."""
@@ -190,7 +179,7 @@ class MyJDAPI(API):
         query = None
         json_data = None
         if not self.connected and path != "/my/connect":
-            raise (RuntimeError("No connection established\n"))
+            raise RuntimeError("No connection established\n")
 
         if http_method == "GET":
             query = "&".join([*_prepare_get_query(params), f"rid={self.__request_id}"])

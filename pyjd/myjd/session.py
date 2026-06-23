@@ -5,7 +5,7 @@ import dataclasses
 from typing import TYPE_CHECKING, Self, final
 
 if TYPE_CHECKING:
-    from pyjd.jd_device import JDDevice
+    from pyjd.jd_types import JDDevice
 
 
 @final
