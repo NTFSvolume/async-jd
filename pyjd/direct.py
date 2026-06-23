@@ -5,8 +5,8 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
-from pyjd.http_client import make_request
-from pyjd.jd_types import Connection, JDDevice
+from pyjd.common import make_request
+from pyjd.jd_types import JDDevice
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclasses.dataclass(slots=True)
-class DirectConnection(Connection):
+class DirectConnection:
     base_url: str = "http://localhost:3128"
     headers: dict[str, str] | None = None
     device: JDDevice = dataclasses.field(

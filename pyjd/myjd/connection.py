@@ -5,7 +5,7 @@ import logging
 import time
 from typing import TYPE_CHECKING, Any, Literal
 
-from pyjd.jd_types import Address, Connection, DirectConnectionInfos
+from pyjd.jd_types import Address, DirectConnectionInfos
 
 if TYPE_CHECKING:
     from collections.abc import Generator, Sequence
@@ -60,7 +60,7 @@ class DirectConnections:
             self.push(address)
 
 
-class MyJDConnection(Connection):
+class MyJDConnection:
     def __init__(
         self,
         api: MyJDAPI,
@@ -79,7 +79,7 @@ class MyJDConnection(Connection):
             return
 
         logger.info("refreshing direct connections")
-        resp = self.api.request(
+        resp = self.api.request_json(
             "/device/getDirectConnectionInfos",
             "POST",
             action=self.__action_url(),
@@ -121,7 +121,7 @@ class MyJDConnection(Connection):
             if now < cooldown:
                 continue
 
-            response = self.api.request(
+            response = self.api.request_json(
                 path,
                 http_action,
                 params,
@@ -155,7 +155,9 @@ class MyJDConnection(Connection):
         *,
         binary: bool = False,
     ):
-        response = self.api.request(path, http_action, params, self.__action_url(), binary=binary)
+        response = self.api.request_json(
+            path, http_action, params, self.__action_url(), binary=binary
+        )
         if response is None or binary:
             return response
 

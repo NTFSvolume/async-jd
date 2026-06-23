@@ -7,52 +7,12 @@ https://my.jdownloader.org/developers/index.html#tag_342
 
 from __future__ import annotations
 
-import dataclasses as py_dataclasses
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, Self
+from typing import Any
 
 from pydantic import dataclasses
 
-if TYPE_CHECKING:
-    from collections.abc import Generator, Mapping, Sequence
-
-
-class Connection(Protocol):
-    device: JDDevice
-
-    def action(
-        self,
-        path: str,
-        params: Sequence[tuple[str, Any]] | None = None,
-        *,
-        binary: bool = False,
-    ) -> Any: ...
-
-
-_MISSING = object()
-
-
-class DictDataClass:
-    __dataclass_fields__: ClassVar[dict[str, py_dataclasses.Field[Any]]]
-
-    def __iter__(self) -> Generator[tuple[str, Any]]:
-        for field in py_dataclasses.fields(self):
-            yield field.name, getattr(self, field.name)
-
-    def __json__(self) -> dict[str, Any]:
-        return py_dataclasses.asdict(self)
-
-    @classmethod
-    def filter_dict(cls, data: Mapping[str, Any]) -> dict[str, Any]:
-        return {
-            field.name: value
-            for field in py_dataclasses.fields(cls)
-            if field.init and (value := data.get(field.name, _MISSING)) is not _MISSING
-        }
-
-    @classmethod
-    def from_dict(cls, data: Mapping[str, Any]) -> Self:
-        return cls(**cls.filter_dict(data))
+from pyjd.common import DictDataClass
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -126,8 +86,11 @@ class BasicAuthType(StrEnum):
 class Context(StrEnum):
     """Contextmenu selection."""
 
-    LGC = "LGC"  # linkgrabber rightclick
-    DLC = "DLC"  # downloadlist rightclick
+    LGC = "LGC"
+    "linkgrabber rightclick"
+
+    DLC = "DLC"
+    "downloadlist rightclick"
 
 
 class MenuType(StrEnum):

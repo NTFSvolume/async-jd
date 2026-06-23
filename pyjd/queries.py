@@ -5,7 +5,8 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from pyjd.jd_types import AbstractType, DictDataClass, Priority
+from pyjd.common import DictDataClass
+from pyjd.jd_types import AbstractType, Priority
 
 
 @dataclasses.dataclass(slots=True, frozen=True)

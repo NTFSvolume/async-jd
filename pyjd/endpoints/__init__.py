@@ -1,18 +1,32 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol
 
 if TYPE_CHECKING:
-    from pyjd.jd_types import Connection
+    from collections.abc import Sequence
+
+    from pyjd.jd_types import JDDevice
+
+
+class Connection(Protocol):
+    device: JDDevice
+
+    def action(
+        self,
+        path: str,
+        params: Sequence[tuple[str, Any]] | None = None,
+        *,
+        binary: bool = False,
+    ) -> Any: ...
 
 
 class Action:
-    __slots__ = ("connection",)
+    __slots__ = ("conn",)
     endpoint: ClassVar[str]
-    connection: Connection
+    conn: Connection
 
     def __init__(self, connection: Connection) -> None:
-        self.connection = connection
+        self.conn = connection
 
     def __repr__(self) -> str:
         return f"<{type(self).__name__}(endpoint={self.endpoint!r})>"
@@ -22,6 +36,6 @@ class Action:
             cls.endpoint = endpoint
         super().__init_subclass__(**kwargs)
 
-    def action(self, route: str, params: Any | None = None, binary: bool = False) -> Any:
+    def action(self, route: str, params: Any | None = None, *, binary: bool = False) -> Any:
         route = f"/{self.endpoint}{route}"
-        return self.connection.action(route, params, binary=binary)
+        return self.conn.action(route, params, binary=binary)
