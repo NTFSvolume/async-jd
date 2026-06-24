@@ -8,11 +8,17 @@ https://my.jdownloader.org/developers/index.html#tag_342
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
-
-from pydantic import dataclasses
+from typing import TYPE_CHECKING, Any
 
 from pyjd.common import DictDataClass
+
+if TYPE_CHECKING:
+    import dataclasses
+else:
+    try:
+        from pydantic import dataclasses
+    except ImportError:
+        import dataclasses
 
 
 @dataclasses.dataclass(slots=True, frozen=True)
@@ -77,8 +83,6 @@ class AvailableLinkState(StrEnum):
 
 
 class BasicAuthType(StrEnum):
-    """Types of basic auth protocols."""
-
     FTP = "FTP"
     HTTP = "HTTP"
 
@@ -166,11 +170,6 @@ class Status(StrEnum):
     FINISHED = "FINISHED"
 
 
-#
-# structures and objects
-#
-
-
 @dataclasses.dataclass(slots=True, frozen=True)
 class Account(DictDataClass):
     """This is a premium hoster account
@@ -178,14 +177,13 @@ class Account(DictDataClass):
     Initializes itself from a query result (dict)
     """
 
+    uuid: int
     errorString: str | None = None
     errorType: str | None = None
     hostname: str | None = None
     trafficLeft: int | None = None
     trafficMax: int | None = None
     username: str | None = None
-    uuid: int | None = None
-
     validUntil: int | None = None
     valid: bool | None = None
     enabled: bool | None = None
@@ -196,10 +194,10 @@ class Account(DictDataClass):
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class BasicAuth(DictDataClass):
+    id: int
     created: int | None = None
     enabled: bool | None = None
     hostmask: str | None = None
-    id: int | None = None
     lastValidated: int | None = None
     password: str | None = None
     type: BasicAuthType | None = None

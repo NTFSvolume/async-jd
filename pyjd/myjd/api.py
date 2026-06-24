@@ -185,7 +185,6 @@ class MyJDAPI:
         """Make a request to the MyJD API."""
         self.update_request_id()
         api = api or self.__api_url
-        data = None
         encrypted_json = None
         if not self.connected and path != "/my/connect":
             raise RuntimeError("No connection established\n")
