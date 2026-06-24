@@ -4,9 +4,9 @@ import json
 import logging
 import time
 import urllib.parse
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
-from pyjd.common import Params, make_request
+from pyjd.common import Params, make_request, prepare_api_json
 from pyjd.crypto import (
     create_secret,
     decrypt_secret,
@@ -18,7 +18,7 @@ from pyjd.jd_types import JDDevice
 from pyjd.myjd.session import MyJDSession, MyJDSessionBackup
 
 if TYPE_CHECKING:
-    from collections.abc import Generator
+    from collections.abc import Generator, Iterable
 
     import requests
 
@@ -102,14 +102,9 @@ class MyJDAPI:
             login_secret=create_secret(email, password, "server"),
             device_secret=create_secret(email, password, "device"),
         )
-        response = self.request_json(
-            "/my/connect",
-            "GET",
-            [
-                ("email", email),
-                ("appkey", self.__app_key),
-            ],
-        )
+
+        url = self._sign_url("/my/connect", ("email", email), ("appkey", self.__app_key))
+        response = self.request_json(url)
         self.__session.connected = True
         self.update_request_id()
         self.__session.token = response["sessiontoken"]
@@ -124,14 +119,12 @@ class MyJDAPI:
         :returns: True if successful, False if there was any error.
         :rtype: bool
         """
-        response = self.request_json(
+        url = self._sign_url(
             "/my/reconnect",
-            "GET",
-            [
-                ("sessiontoken", self.__session.token),
-                ("regaintoken", self.__session.regain_token),
-            ],
+            ("sessiontoken", self.session_token),
+            ("regaintoken", self.__session.regain_token),
         )
+        response = self.request_json(url)
         self.update_request_id()
         self.__session.token = response["sessiontoken"]
         self.__session.regain_token = response["regaintoken"]
@@ -139,18 +132,12 @@ class MyJDAPI:
         return response
 
     def disconnect(self) -> bool:
-        """Disconnect from the API.
-
-        :returns: True if successful, False if there was any error.
-        :rtype: bool
-        """
-
-        response = self.request_json(
-            "/my/disconnect", "GET", [("sessiontoken", self.__session.token)]
-        )
+        url = self._sign_url("/my/disconnect", ("sessiontoken", self.session_token))
+        resp = self.request_json(url)
         self.update_request_id()
         self.__session = MyJDSession()
-        return response
+        assert type(resp) is bool
+        return resp
 
     def export_session(self) -> MyJDSessionBackup:
         return MyJDSessionBackup.freeze(self.__session)
@@ -159,16 +146,17 @@ class MyJDAPI:
         self.__session = session.unfreeze()
 
     def update_devices(self) -> bool:
-        response = self.request_json(
-            "/my/listdevices",
-            "GET",
-            [
-                ("sessiontoken", self.__session.token),
-            ],
-        )
+        url = self._sign_url("/my/listdevices", ("sessiontoken", self.session_token))
+        response = self.request_json(url)
         self.update_request_id()
         self.__session.devices = tuple(JDDevice(**d) for d in response["list"])
         return response
+
+    def _sign_url(self, path: str, *params: tuple[str, str | None]) -> str:
+        query = "&".join([*_quote_query_params(params), f"rid={self.__request_id}"])
+        url = f"{path}?{query}"
+        sig = sign_hmac_sha256(self.__server_encryption_token, url)
+        return f"{url}&signature={sig}"
 
     def get_device(self, device_name: str | None = None, device_id: str | None = None) -> JDDevice:
         if not self.connected:
@@ -190,7 +178,6 @@ class MyJDAPI:
     def request(
         self,
         path: str,
-        http_method: Literal["GET", "POST"] = "GET",
         params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
@@ -199,112 +186,63 @@ class MyJDAPI:
         self.update_request_id()
         api = api or self.__api_url
         data = None
-        query = None
-        json_data = None
+        encrypted_json = None
         if not self.connected and path != "/my/connect":
             raise RuntimeError("No connection established\n")
 
-        if http_method == "GET":
-            query = "&".join([*_prepare_get_query(params), f"rid={self.__request_id}"])
-            url = f"{path}?{query}"
-            sig = sign_hmac_sha256(self.__server_encryption_token, url)
-            request_url = f"{api}{url}&signature={sig}"
-        else:
-            data = json.dumps(
-                {
-                    "apiVer": self.__api_version,
-                    "url": path,
-                    "params": params,
-                    "rid": self.__request_id,
-                }
-            )
-            # Removing quotes around null elements.
-            data = data.replace('"null"', "null").replace("'null'", "null")
-            json_data = encrypt_secret(
-                self.__device_encryption_token,
-                data.encode("utf-8"),
-            )
-            request_url = api + (action or "") + path
-
+        data = prepare_api_json(path, params).encode("utf-8")
+        encrypted_json = encrypt_secret(self.__device_encryption_token, data)
+        request_url = api + (action or "") + path
         resp = make_request(
             request_url,
-            headers={"Content-Type": "application/aesjson-jd; charset=utf-8"}
-            if json_data
-            else None,
-            data=json_data,
+            headers={"Content-Type": "application/aesjson-jd; charset=utf-8"},
+            data=encrypted_json,
             timeout=3,
         )
         if resp.status_code == 200:
             return resp
 
         error = _decode_error(resp.text, self.__session.device_encryption_token)
-        raise RuntimeError(_error_msg(error, api, path, http_method, query, data))
+        raise RuntimeError(str(error))
 
     def request_json(
         self,
         path: str,
-        http_method: Literal["GET", "POST"] = "GET",
         params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
     ) -> Any:
         """Make a request to the MyJD API."""
-        resp = self.request(path, http_method, params, action, api)
-        return self.decode_response(resp, action)
-
-    def decode_response(
-        self, encrypted_response: requests.Response, action: str | None
-    ) -> Any | None:
+        resp = self.request(path, params, action, api)
         token = self.__server_encryption_token if action is None else self.__device_encryption_token
+        return self.decode_response(resp, token)
+
+    def decode_response(self, encrypted_response: requests.Response, token: bytes) -> Any | None:
         response = decrypt_secret(token, encrypted_response.text)
         data = json.loads(response.decode("utf-8"))
-        data = data if data["rid"] == self.__request_id else None
+        if data["rid"] == self.__request_id:
+            raise RuntimeError("Request id does not match")
         self.update_request_id()
         return data
 
 
-def _prepare_get_query(params: Params | None) -> Generator[str]:
+def _quote_query_params(params: Iterable[tuple[str, str | None]] | None) -> Generator[str]:
     if params is None:
         return
     for name, value in params:
+        if value is None:
+            raise RuntimeError(f"{name} is not available")
         url_value = value if name == "encryptedLoginSecret" else urllib.parse.quote(value)
         yield f"{name}={url_value}"
 
 
-def _decode_error(text: str, device_encryption_token: bytes | None) -> Any:
+def _decode_error(text: str, token: bytes | None) -> Any:
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        if not device_encryption_token:
+        if not token:
             raise RuntimeError("Failed to decode response: {}", text) from None
         try:
-            return json.loads(decrypt_secret(device_encryption_token, text))
+            return json.loads(decrypt_secret(token, text))
         except json.JSONDecodeError:
             raise RuntimeError("Failed to decode response: {}", text) from None
-
-
-def _error_msg(  # noqa: PLR0913
-    error: dict[str, str],
-    api: str,
-    path: str,
-    http_method: str,
-    query: str | None,
-    data: str | None,
-) -> str:
-    msg = (
-        "\n\tSOURCE: "
-        + error["src"]
-        + "\n\tTYPE: "
-        + error["type"]
-        + "\n------\nREQUEST_URL: "
-        + api
-        + path
-    )
-
-    if http_method == "GET" and query:
-        msg += query
-
-    msg += "\n"
-    if data is not None:
-        msg += "DATA:\n" + data
-    return msg
