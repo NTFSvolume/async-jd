@@ -27,6 +27,14 @@ def next_request_id() -> int:
     return time.time_ns()
 
 
+def update_request_id(url: str | None = None) -> None:
+    if url and (rid := urllib.parse.parse_qs(url).get("rid")):
+        new_id = int(rid[0])
+    else:
+        new_id = time.time_ns()
+    REQUEST_ID.set(new_id)
+
+
 class DictDataClass:
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
 
@@ -60,8 +68,6 @@ def make_request(
     timeout: int = 60,
     method: str = "POST",
 ) -> requests.Response:
-    rid = next(iter(urllib.parse.parse_qs(url).get("rid", ())), None) or next_request_id()
-    REQUEST_ID.set(int(rid))
     logger.debug(f"Request to {url}")
     headers = headers or {}
     if method == "POST":

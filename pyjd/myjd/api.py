@@ -5,7 +5,14 @@ import logging
 import urllib.parse
 from typing import TYPE_CHECKING, Any
 
-from pyjd.common import REQUEST_ID, Params, make_request, next_request_id, prepare_api_json
+from pyjd.common import (
+    REQUEST_ID,
+    Params,
+    make_request,
+    next_request_id,
+    prepare_api_json,
+    update_request_id,
+)
 from pyjd.crypto import (
     create_secret,
     decrypt_secret,
@@ -183,7 +190,7 @@ class MyJDAPI:
             raise RuntimeError("No connection established")
 
         request_url = api + (action or "") + path
-
+        update_request_id(request_url)
         if is_connect or method == "GET":
             resp = make_request(request_url, timeout=30, method="GET")
         else:

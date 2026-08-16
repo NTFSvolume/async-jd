@@ -7,7 +7,7 @@ from typing import Any
 
 import requests
 
-from pyjd.common import Params, make_request, prepare_api_json
+from pyjd.common import Params, make_request, prepare_api_json, update_request_id
 from pyjd.jd_types import JDDevice
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,7 @@ class DirectConnection:
 
     def jd_version(self) -> int:
         url = f"{self.base_url}/jd/version"
+        update_request_id()
         resp = make_request(url, headers=self.headers)
         return _parse_resp(resp.content)
 
@@ -48,6 +49,7 @@ class DirectConnection:
 
     def request(self, path: str, params: Params | None = None) -> requests.Response:
         url = f"{self.base_url}{path}"
+        update_request_id()
         return make_request(url, data=prepare_api_json(path, params))
 
 
