@@ -4,10 +4,9 @@ import json
 import logging
 import time
 import urllib.parse
-from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
-from pyjd.common import Params, make_request, prepare_api_json
+from pyjd.common import REQUEST_ID, Params, make_request, prepare_api_json
 from pyjd.crypto import (
     create_secret,
     decrypt_secret,
@@ -24,13 +23,6 @@ if TYPE_CHECKING:
     import requests
 
 logger = logging.getLogger(__name__)
-
-
-REQUEST_ID: ContextVar[int] = ContextVar("REQUEST_ID")
-
-
-def _new_request_id() -> int:
-    return int(time.time() * 1000)
 
 
 class MyJDAPI:
@@ -97,7 +89,7 @@ class MyJDAPI:
 
         This has to be done for every new request.
         """
-        REQUEST_ID.set(_new_request_id())
+        REQUEST_ID.set(time.time_ns())
 
     def connect(self, email: str, password: str) -> bool:
         self.update_request_id()
@@ -201,18 +193,19 @@ class MyJDAPI:
         api = api or self.__api_url
         is_connect = path.partition("?")[0] == "/my/connect"
         if not (self.connected or is_connect):
-            raise RuntimeError("No connection established\n")
+            raise RuntimeError("No connection established")
 
         request_url = api + (action or "") + path
+
         if is_connect or method == "GET":
-            resp = make_request(request_url, timeout=3, method="GET")
+            resp = make_request(request_url, timeout=30, method="GET")
         else:
             data = prepare_api_json(path, params).encode("utf-8")
             resp = make_request(
                 request_url,
                 headers={"Content-Type": "application/aesjson-jd; charset=utf-8"},
                 data=encrypt_secret(self.__device_encryption_token, data),
-                timeout=3,
+                timeout=30,
                 method="POST",
             )
         if resp.status_code == 200:
@@ -239,7 +232,7 @@ class MyJDAPI:
         data = json.loads(response.decode("utf-8"))
         rid = REQUEST_ID.get()
         if data["rid"] != rid:
-            raise RuntimeError("Request id does not match")
+            raise RuntimeError(f"Request id {rid} does not match {data['rid']}")
         self.update_request_id()
         return data
 

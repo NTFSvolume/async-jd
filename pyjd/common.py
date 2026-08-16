@@ -31,7 +31,7 @@ class DictDataClass:
 
     # recursive dict conversion
     def __json__(self) -> dict[str, Any]:
-        return dataclasses.asdict(self)
+        return dict(self)
 
     @classmethod
     def filter_dict(cls, data: Mapping[str, Any]) -> dict[str, Any]:
@@ -61,11 +61,22 @@ def make_request(
     return requests.request(method, url, headers=headers, timeout=timeout, data=data)
 
 
-def prepare_api_json(path: str, params: list[Any] | str | None) -> str:
+def _parse_param(params: Params | None):
+    if not params:
+        return
+    for param in params:
+        if type(param) is dict:
+            yield {k: v for k, v in param.items() if v is not None}
+        else:
+            yield params
+
+
+def prepare_api_json(path: str, params: Params | None) -> str:
+
     data = {
         "apiVer": 1,
         "url": path.partition("?")[0],
-        "params": params or (),
-        "rid": 12345,
+        "params": list(_parse_param(params)),
+        "rid": REQUEST_ID.get(),
     }
     return json.dumps(data)

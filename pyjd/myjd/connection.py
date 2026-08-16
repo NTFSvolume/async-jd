@@ -83,7 +83,6 @@ class MyJDConnection:
         logger.info("refreshing direct connections")
         resp = self.api.request_json(
             "/device/getDirectConnectionInfos",
-            "POST",
             action=self.__action_url(),
         )
         resp = DirectConnectionInfos(**resp.get("data", resp))
@@ -103,11 +102,11 @@ class MyJDConnection:
     def request_json(
         self,
         path: str,
-        params: Params | None = (),
+        params: Params | None = None,
         http_action: Literal["GET", "POST"] = "POST",
     ) -> Any:
         response = self.request(path, params, http_action)
-        data = self.api.decode_response(response, self.__action_url())
+        data = self.api.decode_response(response, b"")
         if data is None:
             return None
         return data.get("data", data)
@@ -136,10 +135,10 @@ class MyJDConnection:
             try:
                 response = self.api.request(
                     path,
-                    http_action,
                     params,
                     action_url,
                     api=f"http://{address.ip}:{address.port}",
+                    method=http_action,
                 )
             except requests.exceptions.RequestException:
                 self._direct_conns[address] = now + 60
@@ -168,7 +167,7 @@ class MyJDConnection:
         params: Any | None = (),
         http_action: Literal["GET", "POST"] = "POST",
     ) -> requests.Response:
-        response = self.api.request(path, http_action, params, self.__action_url())
+        response = self.api.request(path, params, self.__action_url(), method=http_action)
         self.refresh_direct_connections()
         return response
 
