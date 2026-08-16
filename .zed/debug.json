@@ -1,0 +1,14 @@
+[
+  {
+    "label": "Connect MYJD",
+    "adapter": "Debugpy",
+    "request": "launch",
+    "program": "pyjd/__main__.py",
+    "justMyCode": false,
+    "purpose": ["debug-test"],
+    "args": ["connect"],
+    "env": {
+      "PYTHONASYNCIODEBUG": "1",
+    },
+  },
+]

@@ -3,6 +3,8 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import time
+import urllib.parse
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
@@ -21,6 +23,18 @@ _MISSING = object()
 type Params = list[Any]
 
 
+def next_request_id() -> int:
+    return time.time_ns()
+
+
+def update_request_id(url: str | None = None) -> None:
+    if url and (rid := urllib.parse.parse_qs(url).get("rid")):
+        new_id = int(rid[0])
+    else:
+        new_id = time.time_ns()
+    REQUEST_ID.set(new_id)
+
+
 class DictDataClass:
     __dataclass_fields__: ClassVar[dict[str, dataclasses.Field[Any]]]
 
@@ -31,7 +45,7 @@ class DictDataClass:
 
     # recursive dict conversion
     def __json__(self) -> dict[str, Any]:
-        return dataclasses.asdict(self)
+        return dict(self)
 
     @classmethod
     def filter_dict(cls, data: Mapping[str, Any]) -> dict[str, Any]:
@@ -52,18 +66,31 @@ def make_request(
     headers: dict[str, str] | None = None,
     data: str | None = None,
     timeout: int = 60,
+    method: str = "POST",
 ) -> requests.Response:
     logger.debug(f"Request to {url}")
     headers = headers or {}
-    headers.setdefault("Content-Type", "application/json; charset=utf-8")
-    return requests.post(url, headers=headers, timeout=timeout, data=data)
+    if method == "POST":
+        headers.setdefault("Content-Type", "application/json; charset=utf-8")
+    return requests.request(method, url, headers=headers, timeout=timeout, data=data)
 
 
-def prepare_api_json(path: str, params: list[Any] | str | None) -> str:
+def _parse_param(params: Params | None):
+    if not params:
+        return
+    for param in params:
+        if type(param) is dict:
+            yield {k: v for k, v in param.items() if v is not None}
+        else:
+            yield param
+
+
+def prepare_api_json(path: str, params: Params | None) -> str:
+
     data = {
         "apiVer": 1,
         "url": path.partition("?")[0],
-        "params": params or (),
-        "rid": 12345,
+        "params": list(_parse_param(params)),
+        "rid": REQUEST_ID.get(),
     }
     return json.dumps(data)

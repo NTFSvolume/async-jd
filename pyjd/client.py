@@ -64,10 +64,10 @@ class JDDeviceClient:
         cls,
         email: str,
         password: str,
-        device_id: str | None,
-        device_name: str | None,
+        device_id: str | None = None,
+        device_name: str | None = None,
     ) -> Self:
         api = MyJDAPI()
         api.connect(email, password)
-        device = api.get_device(device_id, device_name)
+        device = api.get_device(id=device_id, name=device_name)
         return cls(MyJDConnection(api, device))

@@ -21,10 +21,10 @@ else:
         import dataclasses
 
 
-@dataclasses.dataclass(slots=True, frozen=True)
+@dataclasses.dataclass(slots=True, frozen=True, order=True)
 class JDDevice:
-    name: str
     id: str
+    name: str
     type: str
 
 
