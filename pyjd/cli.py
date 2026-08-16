@@ -13,8 +13,7 @@ def connect() -> None:
     device = JDDeviceClient.myjd_connect(
         email=email,
         password=creds["PASSWORD"] or "",
-        device_id=creds["DEVICE_ID"],
+        device_id=creds.get("DEVICE_ID"),
+        device_name=creds.get("DEVICE_NAME"),
     )
     app.console.log(device)
-    if device:
-        pass
