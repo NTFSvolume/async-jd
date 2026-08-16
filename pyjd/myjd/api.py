@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 import urllib.parse
 from typing import TYPE_CHECKING, Any
 
-from pyjd.common import REQUEST_ID, Params, make_request, prepare_api_json
+from pyjd.common import REQUEST_ID, Params, make_request, next_request_id, prepare_api_json
 from pyjd.crypto import (
     create_secret,
     decrypt_secret,
@@ -84,15 +83,7 @@ class MyJDAPI:
             self.__session.device_secret, self.session_token
         )
 
-    def update_request_id(self) -> None:
-        """Update ``__request_id``.
-
-        This has to be done for every new request.
-        """
-        REQUEST_ID.set(time.time_ns())
-
     def connect(self, email: str, password: str) -> bool:
-        self.update_request_id()
         self.__session = MyJDSession(
             login_secret=create_secret(email, password, "server"),
             device_secret=create_secret(email, password, "device"),
@@ -106,7 +97,6 @@ class MyJDAPI:
         )
         response = self.request_json(url)
         self.__session.connected = True
-        self.update_request_id()
         self.__session.token = response["sessiontoken"]
         self.__session.regain_token = response["regaintoken"]
         self.__update_encryption_tokens()
@@ -125,7 +115,6 @@ class MyJDAPI:
             ("regaintoken", self.__session.regain_token),
         )
         response = self.request_json(url)
-        self.update_request_id()
         self.__session.token = response["sessiontoken"]
         self.__session.regain_token = response["regaintoken"]
         self.__update_encryption_tokens()
@@ -134,7 +123,6 @@ class MyJDAPI:
     def disconnect(self) -> bool:
         url = self._sign_url("/my/disconnect", ("sessiontoken", self.session_token))
         resp = self.request_json(url)
-        self.update_request_id()
         self.__session = MyJDSession()
         assert type(resp) is bool
         return resp
@@ -148,13 +136,12 @@ class MyJDAPI:
     def update_devices(self) -> None:
         url = self._sign_url("/my/listdevices", ("sessiontoken", self.session_token))
         response = self.request_json(url, [self.session_token], method="GET")
-        self.update_request_id()
         self.__session.devices = tuple(JDDevice(**d) for d in response["list"])
 
     def _sign_url(
         self, path: str, *params: tuple[str, str | None], token: bytes | None = None
     ) -> str:
-        query = "&".join([*_quote_query_params(params), f"rid={REQUEST_ID.get()}"])
+        query = "&".join([*_quote_query_params(params), f"rid={next_request_id()}"])
         url = f"{path}?{query}"
         sig = sign_hmac_sha256(token or self.__server_encryption_token, url)
         return f"{url}&signature={sig}"
@@ -197,6 +184,11 @@ class MyJDAPI:
 
         request_url = api + (action or "") + path
 
+        rid = (
+            next(iter(urllib.parse.parse_qs(request_url).get("rid", ())), None) or next_request_id()
+        )
+        REQUEST_ID.set(int(rid))
+
         if is_connect or method == "GET":
             resp = make_request(request_url, timeout=30, method="GET")
         else:
@@ -233,7 +225,6 @@ class MyJDAPI:
         rid = REQUEST_ID.get()
         if data["rid"] != rid:
             raise RuntimeError(f"Request id {rid} does not match {data['rid']}")
-        self.update_request_id()
         return data
 
 

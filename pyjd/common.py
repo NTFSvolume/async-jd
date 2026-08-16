@@ -3,6 +3,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import logging
+import time
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
@@ -19,6 +20,10 @@ REQUEST_ID: ContextVar[int] = ContextVar("REQUEST_ID")
 _MISSING = object()
 
 type Params = list[Any]
+
+
+def next_request_id() -> int:
+    return time.time_ns()
 
 
 class DictDataClass:
