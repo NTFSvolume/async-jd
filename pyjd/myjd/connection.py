@@ -81,6 +81,7 @@ class MyJDConnection:
             return
 
         logger.info("refreshing direct connections")
+        self.api.update_request_id()
         resp = self.api.request_json(
             "/device/getDirectConnectionInfos",
             action=self.__action_url(),
@@ -114,7 +115,7 @@ class MyJDConnection:
     def request(
         self,
         path: str,
-        params: Params | None = (),
+        params: Params | None = None,
         http_action: Literal["GET", "POST"] = "POST",
     ) -> requests.Response:
         if not self._ready:
@@ -133,6 +134,7 @@ class MyJDConnection:
                 continue
 
             try:
+                self.api.update_request_id()
                 response = self.api.request(
                     path,
                     params,
@@ -156,7 +158,7 @@ class MyJDConnection:
     def request_bytes(
         self,
         path: str,
-        params: Params | None = (),
+        params: Params | None = None,
         http_action: Literal["GET", "POST"] = "POST",
     ) -> bytes:
         return self.request(path, params, http_action).content
@@ -167,6 +169,7 @@ class MyJDConnection:
         params: Any | None = (),
         http_action: Literal["GET", "POST"] = "POST",
     ) -> requests.Response:
+        self.api.update_request_id()
         response = self.api.request(path, params, self.__action_url(), method=http_action)
         self.refresh_direct_connections()
         return response
