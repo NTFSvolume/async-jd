@@ -4,6 +4,7 @@ import dataclasses
 import json
 import logging
 import time
+import urllib.parse
 from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any, ClassVar, Self
 
@@ -59,6 +60,8 @@ def make_request(
     timeout: int = 60,
     method: str = "POST",
 ) -> requests.Response:
+    rid = next(iter(urllib.parse.parse_qs(url).get("rid", ())), None) or next_request_id()
+    REQUEST_ID.set(int(rid))
     logger.debug(f"Request to {url}")
     headers = headers or {}
     if method == "POST":

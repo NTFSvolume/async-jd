@@ -184,11 +184,6 @@ class MyJDAPI:
 
         request_url = api + (action or "") + path
 
-        rid = (
-            next(iter(urllib.parse.parse_qs(request_url).get("rid", ())), None) or next_request_id()
-        )
-        REQUEST_ID.set(int(rid))
-
         if is_connect or method == "GET":
             resp = make_request(request_url, timeout=30, method="GET")
         else:
