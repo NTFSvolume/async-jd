@@ -76,7 +76,7 @@ def _parse_param(params: Params | None):
         if type(param) is dict:
             yield {k: v for k, v in param.items() if v is not None}
         else:
-            yield params
+            yield param
 
 
 def prepare_api_json(path: str, params: Params | None) -> str:
