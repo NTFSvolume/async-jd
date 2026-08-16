@@ -52,11 +52,13 @@ def make_request(
     headers: dict[str, str] | None = None,
     data: str | None = None,
     timeout: int = 60,
+    method: str = "POST",
 ) -> requests.Response:
     logger.debug(f"Request to {url}")
     headers = headers or {}
-    headers.setdefault("Content-Type", "application/json; charset=utf-8")
-    return requests.post(url, headers=headers, timeout=timeout, data=data)
+    if method == "POST":
+        headers.setdefault("Content-Type", "application/json; charset=utf-8")
+    return requests.request(method, url, headers=headers, timeout=timeout, data=data)
 
 
 def prepare_api_json(path: str, params: list[Any] | str | None) -> str:

@@ -26,9 +26,14 @@ class DirectConnection:
         ),
     )
 
+    def jd_version(self) -> int:
+        url = f"{self.base_url}/jd/version"
+        resp = make_request(url, headers=self.headers)
+        return _parse_resp(resp.content)
+
     def is_connected(self) -> bool:
         try:
-            make_request(self.base_url + "/jd/version", headers=self.headers)
+            self.jd_version()
         except requests.exceptions.RequestException:
             return False
         else:

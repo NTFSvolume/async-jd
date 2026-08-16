@@ -4,6 +4,7 @@ import json
 import logging
 import time
 import urllib.parse
+from contextvars import ContextVar
 from typing import TYPE_CHECKING, Any
 
 from pyjd.common import Params, make_request, prepare_api_json
@@ -25,6 +26,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+REQUEST_ID: ContextVar[int] = ContextVar("REQUEST_ID")
+
+
 def _new_request_id() -> int:
     return int(time.time() * 1000)
 
@@ -33,7 +37,6 @@ class MyJDAPI:
     """Main class for connecting to the MyJD API."""
 
     def __init__(self, appkey: str | None = None) -> None:
-        self.__request_id = _new_request_id()
         self.__api_url = "https://api.jdownloader.org"
         self.__app_key = appkey or "https://github.com/NTFSvolume/async-jd"
         self.__api_version = 1
@@ -94,7 +97,7 @@ class MyJDAPI:
 
         This has to be done for every new request.
         """
-        self.__request_id = _new_request_id()
+        REQUEST_ID.set(_new_request_id())
 
     def connect(self, email: str, password: str) -> bool:
         self.update_request_id()
@@ -103,7 +106,12 @@ class MyJDAPI:
             device_secret=create_secret(email, password, "device"),
         )
 
-        url = self._sign_url("/my/connect", ("email", email), ("appkey", self.__app_key))
+        url = self._sign_url(
+            "/my/connect",
+            ("email", email),
+            ("appkey", self.__app_key),
+            token=self.__session.login_secret,
+        )
         response = self.request_json(url)
         self.__session.connected = True
         self.update_request_id()
@@ -145,35 +153,41 @@ class MyJDAPI:
     def import_session(self, session: MyJDSessionBackup) -> None:
         self.__session = session.unfreeze()
 
-    def update_devices(self) -> bool:
+    def update_devices(self) -> None:
         url = self._sign_url("/my/listdevices", ("sessiontoken", self.session_token))
-        response = self.request_json(url)
+        response = self.request_json(url, [self.session_token], method="GET")
         self.update_request_id()
         self.__session.devices = tuple(JDDevice(**d) for d in response["list"])
-        return response
 
-    def _sign_url(self, path: str, *params: tuple[str, str | None]) -> str:
-        query = "&".join([*_quote_query_params(params), f"rid={self.__request_id}"])
+    def _sign_url(
+        self, path: str, *params: tuple[str, str | None], token: bytes | None = None
+    ) -> str:
+        query = "&".join([*_quote_query_params(params), f"rid={REQUEST_ID.get()}"])
         url = f"{path}?{query}"
-        sig = sign_hmac_sha256(self.__server_encryption_token, url)
+        sig = sign_hmac_sha256(token or self.__server_encryption_token, url)
         return f"{url}&signature={sig}"
 
-    def get_device(self, device_name: str | None = None, device_id: str | None = None) -> JDDevice:
+    def get_device(
+        self,
+        *,
+        name: str | None = None,
+        id: str | None = None,  # noqa: A002
+    ) -> JDDevice:
         if not self.connected:
-            raise RuntimeError("No connection established\n")
+            raise RuntimeError("No connection established")
 
-        if not (device_id or device_name):
+        if not (id or name):
             raise ValueError("Either device_id or device_name are required")
 
         for device in self.__session.devices:
-            if device_id is not None and device.id != device_id:
+            if id is not None and device.id != id:
                 continue
-            if device_name is not None and device.name != device_name:
+            if name is not None and device.name != name:
                 continue
 
             return device
 
-        raise LookupError("Device not found\n")
+        raise LookupError("Device not found")
 
     def request(
         self,
@@ -181,23 +195,26 @@ class MyJDAPI:
         params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
+        method: str = "POST",
     ) -> requests.Response:
         """Make a request to the MyJD API."""
-        self.update_request_id()
         api = api or self.__api_url
-        encrypted_json = None
-        if not self.connected and path != "/my/connect":
+        is_connect = path.partition("?")[0] == "/my/connect"
+        if not (self.connected or is_connect):
             raise RuntimeError("No connection established\n")
 
-        data = prepare_api_json(path, params).encode("utf-8")
-        encrypted_json = encrypt_secret(self.__device_encryption_token, data)
         request_url = api + (action or "") + path
-        resp = make_request(
-            request_url,
-            headers={"Content-Type": "application/aesjson-jd; charset=utf-8"},
-            data=encrypted_json,
-            timeout=3,
-        )
+        if is_connect or method == "GET":
+            resp = make_request(request_url, timeout=3, method="GET")
+        else:
+            data = prepare_api_json(path, params).encode("utf-8")
+            resp = make_request(
+                request_url,
+                headers={"Content-Type": "application/aesjson-jd; charset=utf-8"},
+                data=encrypt_secret(self.__device_encryption_token, data),
+                timeout=3,
+                method="POST",
+            )
         if resp.status_code == 200:
             return resp
 
@@ -210,16 +227,18 @@ class MyJDAPI:
         params: Params | None = None,
         action: str | None = None,
         api: str | None = None,
+        method: str = "POST",
     ) -> Any:
         """Make a request to the MyJD API."""
-        resp = self.request(path, params, action, api)
+        resp = self.request(path, params, action, api, method=method)
         token = self.__server_encryption_token if action is None else self.__device_encryption_token
         return self.decode_response(resp, token)
 
     def decode_response(self, encrypted_response: requests.Response, token: bytes) -> Any | None:
         response = decrypt_secret(token, encrypted_response.text)
         data = json.loads(response.decode("utf-8"))
-        if data["rid"] == self.__request_id:
+        rid = REQUEST_ID.get()
+        if data["rid"] != rid:
             raise RuntimeError("Request id does not match")
         self.update_request_id()
         return data
